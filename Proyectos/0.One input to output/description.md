@@ -22,11 +22,11 @@ For that, a Gobstones program has been already given, being the LMC program the 
 The goal in this project is to produce a program that makes the LMC to move its first input into the output.
 
 For that, we need to know the following commands:
-+ 901 (INP): moves one value from the Input Slot into the Accumulator,
-+ 902 (OUT): moves the value in the Accumulator into the Output Slot.
++ **901**: (INP) moves one value from the Input Slot into the Accumulator,
++ **902**: (OUT) moves the value in the Accumulator into the Output Slot.
 
 One last thing. The Gobstones program uses two keys for you to be able to see what is going on:
-+ <1> (the key with the number "one"): shows the initial configuration of the LMC,
-+ <ENTER> (the "carriage return" key): shows the final configuration of the LMC for the given program (or loops, if the LMC loops).
++ **<1>**: (the key with the number "one") shows the initial configuration of the LMC,
++ **<ENTER>**: (the "carriage return" key) shows the final configuration of the LMC for the given program (or loops, if the LMC loops).
 
 Let's get down to work!
