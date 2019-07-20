@@ -58,6 +58,11 @@ function lmcRepresentation() {
 //----------------------------------------------------------
 // Drawing Operations
 //----------------------------------------------------------
+/*@ATTRIBUTE@block_name@Poner LMC_@*/
+procedure PonerLMC_(lmc) {
+  PonerLMC_WithRep_(lmc, lmcRepresentation())
+}
+
 procedure PonerLMC_WithRep_(lmc,lmcRep) {
   VaciarTablero()
   DibujarParedes(bounds(lmc), lmcRep)

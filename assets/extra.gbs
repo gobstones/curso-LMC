@@ -85,6 +85,11 @@ function lmcRepresentation() {
 //----------------------------------------------------------
 // Drawing Operations
 //----------------------------------------------------------
+/*@ATTRIBUTE@block_name@Poner LMC_@*/
+procedure PonerLMC_(lmc) {
+  PonerLMC_WithRep_(lmc, lmcRepresentation())
+}
+
 procedure PonerLMC_WithRep_(lmc,lmcRep) {
   VaciarTablero()
   DibujarParedes(bounds(lmc), lmcRep)
@@ -266,8 +271,6 @@ function corner2Index(dir) {
           )
 }
 
-
-
 //----------------------------------------------------------
 // Operaciones auxiliares para lectura de LMC
 //----------------------------------------------------------
@@ -340,6 +343,7 @@ function sizeOfLMCMem() {
 //-------------------------------
 // LMC external operations
 //-------------------------------
+/*@ATTRIBUTE@block_name@empty LMC with mem size_@*/
 function emptyLMCWithMemSize_(memSize) {
   /* PURPOSE: describes a LMCForm of type LMCModel, with an empty configuration
      PRECONDITIONS:

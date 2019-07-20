@@ -6,6 +6,7 @@ blocks:
        <block type="List"></block>
      </category>
      <category name="Operaciones de la LMC">
+       <block type="PonerLMC_"></block>
        <block type="emptyLMCWithMemSize_"></block>
        <block type="loadInput_On_"></block>
        <block type="loadProgram_On_"></block>

@@ -28,6 +28,7 @@
 //-------------------------------
 // LMC external operations
 //-------------------------------
+/*@ATTRIBUTE@block_name@empty LMC with mem size_@*/
 function emptyLMCWithMemSize_(memSize) {
   /* PURPOSE: describes a LMCForm of type LMCModel, with an empty configuration
      PRECONDITIONS:
