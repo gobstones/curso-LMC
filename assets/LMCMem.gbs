@@ -1,0 +1,58 @@
+//===============================================================
+//===============================================================
+//==== LMC Memory representation
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+
+function memShapeFor_(size) { return (10, 1 + (size-1) div 10)    }
+function memSizeOf_(memS)   { let (x,y) := memS; return (x*y) }
+
+function emptyMemOfSize_(size) {
+    let (x,y) := memShapeFor_(size)
+    return (choose elem_Replicado_Veces(emptyRowOfSize_(x),y-1) ++ [ emptyRowOfSize_(size mod x) ] when (size mod x > 0)
+                   elem_Replicado_Veces(emptyRowOfSize_(x),y)                                      otherwise
+           )
+}
+
+function emptyRowOfSize_(size) { return (elem_Replicado_Veces(0,size)) }
+
+function memOfSize_With_(size, prog) {
+    let (x,y) := memShapeFor_(size)
+    paddedProg := prog ++ elem_Replicado_Veces(0, size-length(prog))
+    programToLoad := separate_InChunksOf_(paddedProg, x)
+    return (programToLoad)
+}
+
+function decodeIndex_For_(index, size, caller, dataSource) {
+  Assert(index < size, "Out of memory bounds at ") // ++ caller ++ " decoding " ++ dataSource)
+                                                               // Strings are not lists... :(
+  let (x,y) := memShapeFor_(size)
+  i := index mod x
+  j := index div x
+  return (i,j)
+}
+
+function fetchPos_From_(pos, mem) {
+   let (i,j) := pos
+   row := elemAt_In_(j, mem)
+   return (elemAt_In_(i, row))
+}
+
+function setPos_To_InMem_(pos, val, mem) {
+  let (i,j) := pos
+  let (before, after) := splitList_At_(mem, j)
+  row := primero (after)
+  after := sinElPrimero (after)
+  return (before
+         ++ [ setIndex_To_InRow_(i,val,row) ]
+         ++ after)
+}
+
+function setIndex_To_InRow_(idx, val, row) {
+  let (before, after) := splitList_At_(row, idx)
+  return (before
+         ++ [ val ]
+         ++ sinElPrimero(after))
+}

@@ -1,0 +1,19 @@
+[
+  { "name": "0.Repaso", "repo": "gobstones/curso-lmc"
+    "homeLink": "https://en.wikipedia.org/wiki/Little_man_computer",
+  , "exercises": 
+    [ { "id": "0", "name": "One input to output"
+      , "path": "Proyectos/0.One input to output"
+      }
+    , { "id": "1", "name": "All input to output"
+      , "path": "Proyectos/1.All input to output"
+      }
+    , { "id": "2", "name": "Accumulate input to output"
+      , "path": "Proyectos/2.Accumulate input to output"
+      }
+    ]
+  }
+]
+
+  
+

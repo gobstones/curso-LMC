@@ -1,0 +1,890 @@
+//===============================================================
+//===============================================================
+//==== LMC Programs
+//===============================================================
+//===============================================================
+// REQUIRES: LMCModel
+
+/* program {
+    lmc := loadInput_On_([10,20,30],
+           loadProgram_On_(accumulatesInpToOut(),
+           emptyLMCWithMemSize_(20)
+           ))
+    
+    return (execute_Program(lmc))
+}
+ */
+
+//-------------------------------
+// LMC programs
+//  halt   0  //  add    1  //  sta    3
+//            //  sub    2  //  lda    5
+//  bra    6  //  brz    7  //  brp    8
+//  e_s    9
+//-------------------------------
+function copyInpToOut()        { return([901, 704, 902, 600])           }
+function accumulatesInpToOut() { return([901, 710, 109, 309, 902, 600]) }
+
+//===============================================================
+//===============================================================
+//==== LMC Board Representation
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+// REQUIRES: LMCForm
+// REQUIRES: LMCMem
+// REQUIRES: LMCModel
+
+// program {
+//   lmc := loadInput_On_([10,20,30],
+//          loadProgram_On_([901, 902],
+//          emptyLMCWithMemSize_(20)
+//          ))
+//   PonerLMC_WithRep_( lmc
+//                    , lmcRepresentation())
+// }
+
+//----------------------------------------------------------
+// LMC's Board Representation 
+//----------------------------------------------------------
+//type LMCModel is LMCForm(
+//      lm       -> (Color, Lista de Números)
+//    , pc       -> (Color, Número)
+//    , acc      -> (Color, Número)
+//    , neg      -> (Color, Número)
+//    , inp      -> (Color, Número)
+//    , out      -> (Color, Número)
+//    , mbs      -> (Color, Número)
+//    , bounds   -> (Color, Lista de Números)
+//    , wz       -> (Color, Número)
+//    , iz       -> (Color, Número)
+//    , dz       -> (Color, Número)
+//    , contents -> (Color, Número)
+//}
+//----------------------------------------------------------
+function lmcRepresentation() {
+   /* PURPOSE: describes a LMCForm of type LMCBoardRep, with a representation of an LMC
+      PRECONDITIONS: none
+   */
+  return (LMCForm(lm       <- (Verde, [ 11, 1 ])      // The Little Man representation (Halted, Active)
+                , pc       <- (Negro, 10)             // The Program Counter place representation
+                , acc      <- (Negro, 11)             // The Accumulator place representation
+                , neg      <- (Negro, 12)             // The NEGative flag place representation
+                , inp      <- (Negro,  2)             // The INPut place representation
+                , out      <- (Negro,  3)             // The OUTput place representation
+                , mbs      <- (Negro,  1)             // The MailBoxeS places representation
+                , bounds   <- (Rojo , [1,2,3,4,5,6])  // The BOUNDS are walls representation (Vertical, Horizontal, NO, NE, SO, SE)
+                , wz       <- (Negro, 20)             // The Working Zone place representation
+                , iz       <- (Negro, 21)             // The Instruction Zone place representation
+                , dz       <- (Negro, 22)             // The Data Zone place representation
+                , contents <- (Azul ,  0)             // The numeric CONTENTS of mailboxes; any number will do
+         ))
+}
+
+//----------------------------------------------------------
+// Drawing Operations
+//----------------------------------------------------------
+procedure PonerLMC_WithRep_(lmc,lmcRep) {
+  VaciarTablero()
+  DibujarParedes(bounds(lmc), lmcRep)
+  DibujarMemoria(lmc, lmcRep)
+  DibujarElementos(lmc, lmcRep)
+  DibujarInput(lmc, lmcRep)
+  DibujarOutput(lmc, lmcRep)
+  DibujarLittleMan(lmc, lmcRep)
+}
+
+function lmc_AsBoardWithRep_(lmc,lmcRep) {
+  PonerLMC_WithRep_(lmc, lmcRep)
+  let (x,y) := memShapeFor_(bounds(lmc))
+  return (tableroActualDe_X_(x,y))
+}
+
+procedure DibujarParedes(memSize, lmcRep) {
+  let (ancho,alto) := memShapeFor_(memSize)
+  IrAlOrigen() Mover__Veces(Norte,alto+3) Mover(Este) 
+  foreach dir in [Norte, Sur] {
+    DibujarCornerDel_Para_(dir, lmcRep)
+    DibujarStraightWallDel_DeAncho_Para_(dir, ancho, lmcRep)
+    DibujarCornerDel_Para_(siguiente(dir), lmcRep)
+    DibujarStraightWallDel_DeAncho_Para_(siguiente(dir), alto+2   , lmcRep)
+  }
+}
+
+procedure DibujarCornerDel_Para_(dir, lmcRep) {
+  PonerElemento_(cornerWall_(bounds(lmcRep), dir))
+  Mover(siguiente(dir))
+}
+
+procedure DibujarStraightWallDel_DeAncho_Para_(dir, ancho, lmcRep) {
+  wallRep := straigthWall_(bounds(lmcRep), isHorizontal_(dir))
+  repeat (ancho) {
+    PonerElemento_(wallRep)
+    Mover(siguiente(dir)) 
+  } 
+}
+
+procedure DibujarMemoria(lmc, lmcRep) {
+  let size := bounds(lmc)
+  let (ancho,alto) := memShapeFor_(size)
+  IrAlOrigen() Mover__Veces(Norte,3) Mover__Veces(Este,2)
+  memActual := todasConcatenadas_(mbs(lmc))
+  repeat (size) {
+    PonerElemento_(mbs(lmcRep))
+    PonerContenido_(primero(memActual), lmcRep)
+    memActual := sinElPrimero(memActual)
+    PasarAlSiguienteMB()
+  } 
+}
+
+procedure PasarAlSiguienteMB() {
+  Mover(Este)  
+  if (hayBolitas(Rojo))
+    { IrAlBorde(Oeste)
+      Mover__Veces(Este, 2)
+      Mover(Norte)
+    }
+}
+
+procedure DibujarElementos(lmc, lmcRep) {
+  let size := bounds(lmc)
+  let (ancho,alto) := memShapeFor_(size)
+  emptyCell := (colorDe_(pc(lmcRep)), 0)
+  elemsContainers := [ inp(lmcRep)          , inp(lmcRep)
+                     , emptyCell            , emptyCell
+                     , pc(lmcRep)           , acc(lmcRep)          , neg(lmcRep)
+                     , wz(lmcRep)           , iz(lmcRep)           , dz(lmcRep)
+                     , emptyCell            , emptyCell
+                     , out(lmcRep)          , out(lmcRep)
+                     ]
+  elemsContents   := [ 0                    , 0
+                     , 0                    , 0
+                     , pc(lmc)              , acc(lmc)             , bool2num(neg(lmc))
+                     , numFromMaybe(wz(lmc)), numFromMaybe(iz(lmc)), numFromMaybe(dz(lmc))
+                     , 0                    , 0
+                     , 0                    , 0
+                     ]
+  elems := combinadosDeAPares_Y_(elemsContainers, elemsContents) 
+  IrAlOrigen() Mover(Norte)
+  PonerElementoYContenido_De_(primero(elems), lmcRep)
+  foreach elementYContent in sinElPrimero(elems) {
+    Mover(Este)
+    PonerElementoYContenido_De_(elementYContent, lmcRep)
+  }
+}
+
+procedure DibujarLittleMan(lmc, lmcRep) {
+  IrAlOrigen() Mover__Veces(Norte, 2)
+  Mover__Veces(Este, 4)
+  PonerElemento_(choose halted_(lm(lmcRep)) when (lmc_IsHalted(lmc))
+                        active_(lm(lmcRep)) otherwise)
+}
+
+procedure DibujarInput(lmc, lmcRep) {
+  IrAlOrigen()
+  Mover(Norte)
+  Mover(Este) PonerContenido_(primero(inp(lmc)), lmcRep) Mover(Oeste)
+  PonerLista_(sinElPrimero(inp(lmc)), bounds(lmc), lmcRep)
+}
+
+procedure DibujarOutput(lmc, lmcRep) {
+  IrAlOrigen()
+  Mover(Este) while (hayBolitas(colorDe_(bounds(lmcRep)))) { Mover(Este) }
+  Mover(Norte)
+  Mover(Oeste) PonerContenido_(primero(out(lmc)), lmcRep) Mover(Este)
+  PonerLista_(sinElPrimero(out(lmc)), bounds(lmc), lmcRep)
+}
+
+procedure PonerLista_(lista, size, lmcRep) {
+  let (ancho,alto) := memShapeFor_(size)
+  foreach contentConIndex in combinadosDeAPares_Y_(lista, [1..alto+2]) {
+    let (content, idx) := contentConIndex
+    PonerContenido_(content, lmcRep)
+    Mover(Norte)
+  }
+}
+
+//----------------------------------------------------------
+// Operations to access the representation
+//----------------------------------------------------------
+procedure PonerElementoYContenido_De_(elementYContent, lmcRep) {
+  let (element, content) := elementYContent
+  PonerElemento_(element)
+  PonerContenido_(content, lmcRep)
+}
+
+procedure PonerContenido_(content, lmcRep) {
+   PonerElemento_((colorDe_(contents(lmcRep))
+                 , content
+                 ))  
+}
+
+procedure PonerElemento_(elemRep) {
+  let (color, value) := elemRep
+  Poner__Veces(color, value)
+}
+
+function colorDe_(elemRep) {
+  let (color, valor) := elemRep
+  return (color)
+}
+
+function cantidadDe_(elemRep) {
+  let (color, valor) := elemRep
+  return (valor)
+}
+
+function halted_(lmRep) {
+  let (color, valor) := lmRep
+  return (color, primero(valor))
+}
+
+function active_(lmRep) {
+  let (color, valor) := lmRep
+  return (color, segundo(valor))
+}
+
+function straigthWall_(boundsRep, esVertical) {
+  let (color, valor) := boundsRep
+  return (color, choose primero(valor) when (esVertical) segundo(valor) otherwise)
+}
+
+function isHorizontal_(dir) { return (dir==Norte || dir==Sur) }
+
+function cornerWall_(boundsRep, direction) {
+  let (color, valor) := boundsRep
+  return (color, elemAt_In_(corner2Index(direction), valor))
+}
+
+function corner2Index(dir) {
+   return (matching (dir) select
+             2 on Norte
+             3 on Este
+             4 on Sur
+             5 otherwise
+          )
+}
+
+
+
+//----------------------------------------------------------
+// Operaciones auxiliares para lectura de LMC
+//----------------------------------------------------------
+function widthOfLMCMem() {
+   IrAlOrigen()
+   Mover(Este)
+   widthSoFar := 0
+   while (hayBolitas(Rojo) && puedeMover(Este)) {
+      widthSoFar := widthSoFar + 1
+      Mover(Este)
+   }
+   Assert(not hayBolitas(Rojo), "There is no LM room represented in the board -- no room for output")
+   Assert(widthSoFar == 12, "There is no LM room represented in the board -- wrong width")
+   return(widthSoFar - 2)
+}
+
+function depthOfLMCMem() {
+   IrAlOrigen()
+   Mover(Este)
+   depthSoFar := 0
+   while (hayBolitas(Rojo) && puedeMover(Norte)) {
+      depthSoFar := depthSoFar + 1
+      Mover(Norte)
+   }
+   if (hayBolitas(Rojo)) { depthSoFar := depthSoFar + 1 }
+   Assert(depthSoFar > 4, "There is no LM room represented in the board -- wrong depth")
+   return(depthSoFar - 4)
+}
+
+function sizeOfLMCMem() {
+   IrAlOrigen()
+   Mover__Veces(Este, 2)
+   Mover__Veces(Norte, 3)
+   sizeSoFar := 0
+   while (hayBolitas(Negro)) {
+      sizeSoFar := sizeSoFar + 1
+      PasarAlSiguienteMB()
+   }
+   Assert(sizeSoFar > 1, "There is no LM room represented in the board -- wrong memory size")
+   return(sizeSoFar )
+}
+
+//===============================================================
+//===============================================================
+//==== LMC Model
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+// REQUIRES: LMCForm
+// REQUIRES: LMCMem
+
+//-------------------------------
+//type LMCModel is LMCForm(
+//      lm       -> Booleano
+//    , pc       -> Número
+//    , acc      -> Número
+//    , neg      -> Booleano
+//    , inp      -> Lista de Números
+//    , out      -> Lista de Números
+//    , mbs      -> Lista de Listas de Números
+//    , bounds   -> Número
+//    , wz       -> Maybe(value -> Número)
+//    , iz       -> Maybe(value -> Número)
+//    , dz       -> Maybe(value -> Número)
+//    , contents -> Número
+//}
+//-------------------------------
+
+//-------------------------------
+// LMC external operations
+//-------------------------------
+function emptyLMCWithMemSize_(memSize) {
+  /* PURPOSE: describes a LMCForm of type LMCModel, with an empty configuration
+     PRECONDITIONS:
+       * memSize (the number of MailBoxeS) is <= 100
+  */
+  Assert(memSize <= 100, "Memory too big in emptyLMC -- it must be <= 100")
+  return (LMCForm(lm       <- True                      // The Little Man starts active
+                , pc       <- 0                         // The Program Counter in 0
+                , acc      <- 0                         // The Accumulator also in 0
+                , neg      <- False                     // No NEGatives results so far
+                , inp      <- []                        // The INPut is initially empty
+                , out      <- []                        // The OUTput is initially empty
+                , mbs      <- emptyMemOfSize_(memSize)  // The MailBoxeS all in zero
+                , bounds   <- memSize                   // The BOUNDS is the number of available mailboxes
+                , wz       <- Nothing                   // The Working Zone is not set
+                , iz       <- Nothing                   // The Instruction Zone is not set
+                , dz       <- Nothing                   // The Data Zone is not set
+                , contents <- 100                       // The base to separate instructions from data
+         ))
+}
+
+function loadInput_On_(input, lmc) {
+  return (LMCForm (lmc | inp <- input))
+}
+
+function loadProgram_On_(prog, lmc) {
+  Assert(length(prog) <= bounds(lmc), "Program too big in loadProgram_On_ -- consider using a bigger memory")
+  memWithProg := memOfSize_With_(bounds(lmc), prog)
+  return (LMCForm (lmc | mbs <- memWithProg))
+}
+
+function execute_Program(lmc) {
+  currentLMC := lmc
+  while (not lmc_IsHalted(currentLMC)) {
+    currentLMC := execute_ProgramOneStep(currentLMC)
+  }
+  return (currentLMC)
+}
+
+function debug_Program_Steps(lmc, cant) {
+  incrementalExec := []
+  foreach i in [0..cant] { incrementalExec := incrementalExec ++ [execute_Program_Steps(i,lmc) ] } 
+  return (incrementalExec)
+}
+
+function execute_Program_Steps(lmc, cant) {
+  currentLMC := lmc
+  repeat (cant) { currentLMC := execute_ProgramOneStep(currentLMC) }
+  return (currentLMC)
+}
+
+function execute_ProgramOneStep(lmc) {
+  return(executeInstruction_      (
+         incrementProgramCounter_(    // If this is done after executing the instruction, the PC is not right
+         fetchData_             (
+         decodeInstruction_    (
+         fetchInstruction_(lmc)))))
+        )                  
+}
+
+function inspectDebugFor_AtStep_(lmc, steps) {
+    ds       := debug_Program_Steps(lmc,steps)
+    lmcToSee := elemAt_In_(steps-1,ds)
+    lmcToSee := fetchData_             (
+         decodeInstruction_    (
+         fetchInstruction_(lmcToSee)))
+    dataAddr := decodeIndex_For_(value(wz(lmcToSee)) mod 100, bounds(lmcToSee), "inspectDebugFor_AtStep_", "WZ")
+    return(value(wz(lmcToSee)), value(iz(lmcToSee))
+          , dataAddr
+          , fetchPos_From_(dataAddr, mbs(lmcToSee))
+          , value(dz(lmcToSee))
+          , lmcToSee)
+}
+
+//-------------------------------
+// LMC Basics
+//-------------------------------
+function resetsInsLMC_(lmc) {
+  return (LMCForm (lmc 
+            | wz <- Nothing
+            , iz <- Nothing
+            , dz <- Nothing
+         ))
+}
+
+function resetsPC_(lmc)    { return (LMCForm (lmc | pc  <- 0))     }
+function setNegLMC_(lmc)   { return (LMCForm (lmc | neg <- True))  }
+function clearNegLMC_(lmc) { return (LMCForm (lmc | neg <- False)) }
+function lmc_IsHalted(lmc) { return(not lm(lmc))                   }
+
+//-------------------------------
+// LMC Instructions
+//-------------------------------
+function haltLMC_(lmc) { return (LMCForm (lmc | lm  <- False)) }
+
+function addLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a ADD instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+     PARAMETERS: lmc is an LMCModel
+  */
+  res := acc(lmc) + value(dz(lmc))
+  return (LMCForm (lmc 
+            | acc <- res mod 100
+            , neg <- (res div 100) /= 0
+         ))
+}
+
+function subLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a SUB instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+  */
+  res := acc(lmc) - value(dz(lmc))
+  return (LMCForm (lmc | acc <- res mod 100
+                       , neg <- (res div 100) /= 0
+        ))
+}
+
+function staLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a STA instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+  */
+  pos := decodeIndex_For_(value(dz(lmc)), bounds(lmc), "STA", "DZ")
+  return (LMCForm (lmc |
+            mbs <- setPos_To_InMem_(pos, acc(lmc), mbs(lmc))
+         ))
+}
+
+function ldaLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a LDA instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+  */
+  pos := decodeIndex_For_(value(dz(lmc)), bounds(lmc), "LDA", "DZ")
+  return (LMCForm (lmc | 
+            acc <- fetchPos_From_(pos, mbs(lmc))
+         ))
+}
+
+function braLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a BRA instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+  */
+  return (LMCForm (lmc | 
+            pc <- value(dz(lmc))
+         ))
+}
+
+function brzLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a BRZ instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+  */
+  return (LMCForm (lmc | 
+            pc <- choose value(dz(lmc)) when (acc(lmc) == 0)
+                         pc(lmc) otherwise
+         ))
+}
+
+function brpLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a BRP instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+  */
+  return (LMCForm (lmc | 
+            pc <- choose value(dz(lmc)) when (not neg(lmc))
+                         pc(lmc) otherwise
+         ))
+}
+
+function e_sLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a E/S instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+  */
+  return (choose 
+            inputLMC_(lmc)     when (value(dz(lmc)) == 1)
+            outputLMC_(lmc)    when (value(dz(lmc)) == 2)
+            boom("Bad address in E/S instruction -- it must be either 1 or 2 (that is, insCode 901 o 902)") otherwise
+         )
+}
+
+function inputLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a INP instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+     OBSERVATION: if the input is empty, inputs zeroes
+  */
+  if (esVacía(inp(lmc))) 
+   then { let (val, newInp) := (0, inp(lmc)) }
+   else { let (val, newInp) := (primero(inp(lmc)), sinElPrimero(inp(lmc))) }
+   
+  return (LMCForm (lmc | acc <- val, inp <- newInp))             
+}
+
+function outputLMC_(lmc) {
+  /* PURPOSE: describes the lmc after executing a OUT instruction
+     PRECONDITIONS: the LMC is not halted and the Data Zone is set
+  */
+return (LMCForm (lmc | out <- out(lmc) ++ [ acc(lmc) ]))             
+}
+
+
+//-------------------------------
+// LMC inner working
+//   (all functions assume as Inv.Rep. an lmc of type LMCModel)
+//-------------------------------
+function incrementProgramCounter_(lmc) {
+  /* PURPOSE: describes the lmc after incrementing the Program Counter
+     PRECONDITIONS: the LMC is not halted
+  */
+  return (LMCForm (lmc | 
+            pc <- (pc(lmc)+1) mod bounds(lmc)
+         ))
+}
+
+function fetchInstruction_(lmc) {
+  /* PURPOSE: describes the lmc after setting the Working Zone according to the MailBox value given by the Program Counter
+     PRECONDITIONS: the LMC is not halted
+  */
+  memPos := decodeIndex_For_(pc(lmc), bounds(lmc), "fetchInstruction_", "PC")
+  return (LMCForm (lmc | 
+            wz <- just(fetchPos_From_(memPos, mbs(lmc)))
+         ))
+}
+
+function decodeInstruction_(lmc) {
+  /* PURPOSE: describes the lmc after setting the Instruction Zone according to the opCode in the Working Zone
+     PRECONDITIONS: the LMC is not halted and the Working Zone is set
+  */
+  insCode := value(wz(lmc)) div 100
+  return (LMCForm(lmc | iz <- just(insCode)))
+}
+
+function fetchData_(lmc) {
+  /* PURPOSE: describes the lmc after setting the Data Zone according to the data source of 
+              the instruction in the Instruction Zone and the Working Zone
+     PRECONDITIONS: the LMC is not halted and the Instruction Zone and Working Zone are set
+  */
+  insCode   := value(iz(lmc))
+  dataIndex := value(wz(lmc)) mod 100
+  dataAddr  := decodeIndex_For_(dataIndex, bounds(lmc), "fetchData_", "dataIndex of opCode")
+  data      := fetchPos_From_(dataAddr, mbs(lmc))
+  return (LMCForm(lmc | 
+            dz <- dataAccordingToSourceFor_Between_And_(insCode, dataIndex, data)
+         ))
+}
+
+function executeInstruction_(lmc) {
+  /* PURPOSE: describes the lmc after executing the instruction given by the Instruction Zone
+                (includes unsetting WZ, IZ and DZ as the last step)
+     PRECONDITIONS: the LMC is not halted and the Instruction Zone and Data Zone are set
+  */
+  lmc' := matching (value(iz(lmc))) select
+            haltLMC_(lmc) on 0
+            addLMC_(lmc)  on 1
+            subLMC_(lmc)  on 2
+            staLMC_(lmc)  on 3
+            ldaLMC_(lmc)  on 5
+            braLMC_(lmc)  on 6
+            brzLMC_(lmc)  on 7
+            brpLMC_(lmc)  on 8
+            e_sLMC_(lmc)  on 9
+            boom("Instruction not recognized in executeInstruction -- review the program loaded") otherwise
+  return (resetsInsLMC_(lmc'))
+}  
+
+//-------------------------------
+// Auxiliaries for inner working
+//-------------------------------
+function dataAccordingToSourceFor_Between_And_(insCode, dataIdx, data) {
+  return (choose just(data)    when (usesMem_(insCode))
+                 just(dataIdx) when (usesValue_(insCode))
+                 Nothing       otherwise
+         )
+}
+
+function usesMem_(insCode) {
+  /* PURPOSE: indicates if the given instruction uses a MailBox contents
+     PRECONDITIONS: none
+  */
+  return (insCode == 1      // ADD uses MailBox content (to ADD it to the ACC)
+       || insCode == 2      // SUB uses MailBox content (to SUBstructing from the ACC)
+       || insCode == 5)     // LDA uses MailBox content (to LoaD to the ACC)
+}
+
+function usesValue_(insCode) {
+  /* PURPOSE: indicates if the given instruction uses the opCode absolute value
+     PRECONDITIONS: none
+  */
+  return (insCode == 3      // STA uses MailBox address  (to STore address value in the ACC)
+       || insCode == 6      // BRA uses the opCode value (to set the PC)
+       || insCode == 7      // BRZ uses the opCode value (to set the PC)
+       || insCode == 8      // BRP uses the opCode value (to set the PC)
+       || insCode == 9)
+}
+
+//===============================================================
+//===============================================================
+//==== LMC Memory representation
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+
+function memShapeFor_(size) { return (10, 1 + (size-1) div 10)    }
+function memSizeOf_(memS)   { let (x,y) := memS; return (x*y) }
+
+function emptyMemOfSize_(size) {
+    let (x,y) := memShapeFor_(size)
+    return (elem_Replicado_Veces(emptyRowOfSize_(x),y-1) ++ [ emptyRowOfSize_(size mod x) ])
+}
+
+function emptyRowOfSize_(size) { return (elem_Replicado_Veces(0,size)) }
+
+function memOfSize_With_(size, prog) {
+    let (x,y) := memShapeFor_(size)
+    paddedProg := prog ++ elem_Replicado_Veces(0, size-length(prog))
+    programToLoad := separate_InChunksOf_(paddedProg, x)
+    return (programToLoad)
+}
+
+function decodeIndex_For_(index, size, caller, dataSource) {
+  Assert(index < size, "Out of memory bounds at ") // ++ caller ++ " decoding " ++ dataSource)
+                                                               // Strings are not lists... :(
+  let (x,y) := memShapeFor_(size)
+  i := index mod x
+  j := index div x
+  return (i,j)
+}
+
+function fetchPos_From_(pos, mem) {
+   let (i,j) := pos
+   row := elemAt_In_(j, mem)
+   return (elemAt_In_(i, row))
+}
+
+function setPos_To_InMem_(pos, val, mem) {
+  let (i,j) := pos
+  let (before, after) := splitList_At_(mem, j)
+  row := primero (after)
+  after := sinElPrimero (after)
+  return (before
+         ++ [ setIndex_To_InRow_(i,val,row) ]
+         ++ after)
+}
+
+function setIndex_To_InRow_(idx, val, row) {
+  let (before, after) := splitList_At_(row, idx)
+  return (before
+         ++ [ val ]
+         ++ sinElPrimero(after))
+}
+
+//===============================================================
+//===============================================================
+//==== LMC basic Form for representation
+//===============================================================
+//===============================================================
+
+type LMCForm is record {
+  /* PURPOSE: Template for LMCs (can be used for model or viewRep)
+  */
+  field lm        // The Little Man 
+  field pc        // The Program Counter
+  field acc       // The Accumulator
+  field neg       // The flag for NEGative results
+  field inp       // The INPut
+  field out       // The OUTput
+  field mbs       // The MailBoxeS
+  field bounds    // The BOUNDS (number of mailboxes, walls, etc.)
+  field wz        // The Working Zone
+  field iz        // The Instruction Zone
+  field dz        // The Data Zone 
+  field contents  // Information about CONTENTS (number limits, number representation)
+}
+
+//===============================================================
+//===============================================================
+//==== Gobstones Lists
+//===============================================================
+//===============================================================
+
+function segundo(list) {
+  return (primero(sinElPrimero(list)))
+}
+
+function length(list) { 
+  elemSeenSoFar := 0
+  foreach elem in list { elemSeenSoFar := elemSeenSoFar + 1 }
+  return (elemSeenSoFar)
+}
+
+function elemAt_In_(idx, list) {
+  current := list
+  repeat(idx) { current := sinElPrimero(current) }
+  return (primero(current))
+}
+
+function elem_Replicado_Veces(elem, cant) {
+  new := []
+  repeat(cant) { new := [ elem ] ++ new }
+  return (new)
+}
+
+function splitList_At_(list, idx) {
+  before := []
+  after  := list
+  repeat (idx) {
+    before := before ++ [ primero(after) ]
+    after  := sinElPrimero (after)
+  }
+  return (before, after)
+}
+
+function separate_InChunksOf_(list, size) {
+  chunksSoFar     := []
+  elementsToSplit := list
+  while (not esVacía(elementsToSplit)) { 
+   let (currentChunk, elementsToSplit) := splitList_At_(elementsToSplit, size)
+   chunksSoFar := chunksSoFar ++ [ currentChunk ]
+  }
+  return (chunksSoFar)
+}
+
+function todasConcatenadas_(lists) {
+  elementosVistos := []
+  foreach list in lists {
+    elementosVistos := elementosVistos ++ list
+  }
+  return(elementosVistos)
+}
+
+function combinadosDeAPares_Y_(list1, list2) {
+  currentList1 := list1
+  currentList2 := list2
+  paresVistos := []
+  while (not esVacía(currentList1) && not esVacía(currentList2)) {
+    paresVistos := paresVistos ++ [ (primero(currentList1), primero(currentList2)) ]
+    currentList1 := sinElPrimero(currentList1)
+    currentList2 := sinElPrimero(currentList2)
+  }
+  return (paresVistos)
+}
+
+//===============================================================
+//===============================================================
+//==== Gobstones Amenities
+//===============================================================
+//===============================================================
+
+//-------------------------------
+// Maybe functions
+//-------------------------------
+type Maybe is variant {
+  case Nothing {}
+  case Just    { field value }
+}
+
+function just(val) { return (Just(value <- val)) }
+function numFromMaybe(maybeNum) {
+  return (matching (maybeNum) select
+            value(maybeNum) on Just
+            0               otherwise
+         )
+}
+
+function bool2num(b) { return (choose 1 when (b) 0 otherwise) }
+
+function fst(par) {
+  let (a,b) := par
+  return (a)
+}
+
+function snd(par) {
+  let (a,b) := par
+  return (b)
+}
+
+//-------------------------------
+// Basic Gobstones functions
+//-------------------------------
+procedure Assert (cond, msg) { if (not cond) { BOOM(msg) } }
+
+/*@ATTRIBUTE@atomic@*/
+procedure Poner__Veces(color,     cantidad) { repeat (cantidad) { Poner(color)     } }
+/*@ATTRIBUTE@atomic@*/
+procedure Sacar__Veces(color,     cantidad) { repeat (cantidad) { Sacar(color)     } }
+/*@ATTRIBUTE@atomic@*/
+procedure Mover__Veces(dirección, cantidad) { repeat (cantidad) { Mover(dirección) } }
+
+procedure IrAlOrigen() { IrAlBorde(Sur) IrAlBorde(Oeste) }
+procedure PasarASiguienteCelda() {
+    if (puedeMover(Este)) { Mover(Este) }
+    else { IrAlBorde(Oeste) Mover(Norte) }
+}
+
+//----------------------------------------------------------
+// Reading and writing of the board
+//----------------------------------------------------------
+function tableroActualDe_X_(ancho, alto) {
+  IrAlOrigen()
+  tablero := [ filaActualDeAncho_(ancho) ]
+  repeat (alto-1) {
+    Mover(Norte)
+    tablero := [ filaActualDeAncho_(ancho) ] ++ tablero
+    
+  }
+  return (tablero)
+}
+
+procedure PonerTablero_(tablero) {
+    VaciarTablero()
+    IrAlOrigen()
+    Mover__Veces(Norte, length(tablero))
+    PonerFila_(primero(tablero))
+    foreach fila in (sinElPrimero(tablero)) {
+        Mover(Sur)
+        PonerFila_(fila)
+    }
+}
+
+function filaActualDeAncho_(ancho) {
+  IrAlBorde(Oeste)
+  fila := [ celdaActual() ]
+  repeat (ancho-1) {
+    Mover(Este)
+    fila := fila ++ [ celdaActual() ]
+  }
+  return (fila)
+}
+
+procedure PonerFila_(fila) {
+    IrAlBorde(Oeste)
+    PonerCelda_(primero(fila))
+    foreach celda in (sinElPrimero(fila)) {
+        Mover(Este)
+        PonerCelda_(celda)
+    }
+}
+
+function celdaActual() {
+   return (nroBolitas(Azul), nroBolitas(Negro)
+         , nroBolitas(Rojo), nroBolitas(Verde))
+}
+
+procedure PonerCelda_(celda) {
+    let (azul, negro, rojo, verde) := celda
+    Poner__Veces(Azul , azul )
+    Poner__Veces(Negro, negro)
+    Poner__Veces(Rojo , rojo )
+    Poner__Veces(Verde, verde)
+}
+

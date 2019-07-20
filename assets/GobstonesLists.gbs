@@ -1,0 +1,67 @@
+//===============================================================
+//===============================================================
+//==== Gobstones Lists
+//===============================================================
+//===============================================================
+
+function segundo(list) {
+  return (primero(sinElPrimero(list)))
+}
+
+function length(list) { 
+  elemSeenSoFar := 0
+  foreach elem in list { elemSeenSoFar := elemSeenSoFar + 1 }
+  return (elemSeenSoFar)
+}
+
+function elemAt_In_(idx, list) {
+  current := list
+  repeat(idx) { current := sinElPrimero(current) }
+  return (primero(current))
+}
+
+function elem_Replicado_Veces(elem, cant) {
+  new := []
+  repeat(cant) { new := [ elem ] ++ new }
+  return (new)
+}
+
+function splitList_At_(list, idx) {
+  before := []
+  after  := list
+  repeat (idx) {
+    before := before ++ [ primero(after) ]
+    after  := sinElPrimero (after)
+  }
+  return (before, after)
+}
+
+function separate_InChunksOf_(list, size) {
+  chunksSoFar     := []
+  elementsToSplit := list
+  while (not esVacía(elementsToSplit)) { 
+   let (currentChunk, elementsToSplit) := splitList_At_(elementsToSplit, size)
+   chunksSoFar := chunksSoFar ++ [ currentChunk ]
+  }
+  return (chunksSoFar)
+}
+
+function todasConcatenadas_(lists) {
+  elementosVistos := []
+  foreach list in lists {
+    elementosVistos := elementosVistos ++ list
+  }
+  return(elementosVistos)
+}
+
+function combinadosDeAPares_Y_(list1, list2) {
+  currentList1 := list1
+  currentList2 := list2
+  paresVistos := []
+  while (not esVacía(currentList1) && not esVacía(currentList2)) {
+    paresVistos := paresVistos ++ [ (primero(currentList1), primero(currentList2)) ]
+    currentList1 := sinElPrimero(currentList1)
+    currentList2 := sinElPrimero(currentList2)
+  }
+  return (paresVistos)
+}

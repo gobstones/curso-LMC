@@ -1,0 +1,26 @@
+//===============================================================
+//===============================================================
+//==== LMC Programs
+//===============================================================
+//===============================================================
+// REQUIRES: LMCModel
+
+/* program {
+    lmc := loadInput_On_([10,20,30],
+           loadProgram_On_(accumulatesInpToOut(),
+           emptyLMCWithMemSize_(20)
+           ))
+    
+    return (execute_Program(lmc))
+}
+ */
+
+//-------------------------------
+// LMC programs
+//  halt   0  //  add    1  //  sta    3
+//            //  sub    2  //  lda    5
+//  bra    6  //  brz    7  //  brp    8
+//  e_s    9
+//-------------------------------
+function copyInpToOut()        { return([901, 704, 902, 600])           }
+function accumulatesInpToOut() { return([901, 710, 109, 309, 902, 600]) }

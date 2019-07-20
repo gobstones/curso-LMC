@@ -1,0 +1,285 @@
+//===============================================================
+//===============================================================
+//==== LMC Board Representation
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+// REQUIRES: LMCForm
+// REQUIRES: LMCMem
+// REQUIRES: LMCModel
+
+// program {
+//   lmc := loadInput_On_([10,20,30],
+//          loadProgram_On_([901, 902],
+//          emptyLMCWithMemSize_(20)
+//          ))
+//   PonerLMC_WithRep_( lmc
+//                    , lmcRepresentation())
+// }
+
+//----------------------------------------------------------
+// LMC's Board Representation 
+//----------------------------------------------------------
+//type LMCModel is LMCForm(
+//      lm       -> (Color, Lista de Números)
+//    , pc       -> (Color, Número)
+//    , acc      -> (Color, Número)
+//    , neg      -> (Color, Número)
+//    , inp      -> (Color, Número)
+//    , out      -> (Color, Número)
+//    , mbs      -> (Color, Número)
+//    , bounds   -> (Color, Lista de Números)
+//    , wz       -> (Color, Número)
+//    , iz       -> (Color, Número)
+//    , dz       -> (Color, Número)
+//    , contents -> (Color, Número)
+//}
+//----------------------------------------------------------
+function lmcRepresentation() {
+   /* PURPOSE: describes a LMCForm of type LMCBoardRep, with a representation of an LMC
+      PRECONDITIONS: none
+   */
+  return (LMCForm(lm       <- (Verde, [ 11, 1 ])      // The Little Man representation (Halted, Active)
+                , pc       <- (Negro, 10)             // The Program Counter place representation
+                , acc      <- (Negro, 11)             // The Accumulator place representation
+                , neg      <- (Negro, 12)             // The NEGative flag place representation
+                , inp      <- (Negro,  2)             // The INPut place representation
+                , out      <- (Negro,  3)             // The OUTput place representation
+                , mbs      <- (Negro,  1)             // The MailBoxeS places representation
+                , bounds   <- (Rojo , [1,2,3,4,5,6])  // The BOUNDS are walls representation (Vertical, Horizontal, NO, NE, SO, SE)
+                , wz       <- (Negro, 20)             // The Working Zone place representation
+                , iz       <- (Negro, 21)             // The Instruction Zone place representation
+                , dz       <- (Negro, 22)             // The Data Zone place representation
+                , contents <- (Azul ,  0)             // The numeric CONTENTS of mailboxes; any number will do
+         ))
+}
+
+//----------------------------------------------------------
+// Drawing Operations
+//----------------------------------------------------------
+procedure PonerLMC_WithRep_(lmc,lmcRep) {
+  VaciarTablero()
+  DibujarParedes(bounds(lmc), lmcRep)
+  DibujarMemoria(lmc, lmcRep)
+  DibujarElementos(lmc, lmcRep)
+  DibujarInput(lmc, lmcRep)
+  DibujarOutput(lmc, lmcRep)
+  DibujarLittleMan(lmc, lmcRep)
+}
+
+function lmc_AsBoardWithRep_(lmc,lmcRep) {
+  PonerLMC_WithRep_(lmc, lmcRep)
+  let (x,y) := memShapeFor_(bounds(lmc))
+  return (tableroActualDe_X_(x,y))
+}
+
+procedure DibujarParedes(memSize, lmcRep) {
+  let (ancho,alto) := memShapeFor_(memSize)
+  IrAlOrigen() Mover__Veces(Norte,alto+3) Mover(Este) 
+  foreach dir in [Norte, Sur] {
+    DibujarCornerDel_Para_(dir, lmcRep)
+    DibujarStraightWallDel_DeAncho_Para_(dir, ancho, lmcRep)
+    DibujarCornerDel_Para_(siguiente(dir), lmcRep)
+    DibujarStraightWallDel_DeAncho_Para_(siguiente(dir), alto+2   , lmcRep)
+  }
+}
+
+procedure DibujarCornerDel_Para_(dir, lmcRep) {
+  PonerElemento_(cornerWall_(bounds(lmcRep), dir))
+  Mover(siguiente(dir))
+}
+
+procedure DibujarStraightWallDel_DeAncho_Para_(dir, ancho, lmcRep) {
+  wallRep := straigthWall_(bounds(lmcRep), isHorizontal_(dir))
+  repeat (ancho) {
+    PonerElemento_(wallRep)
+    Mover(siguiente(dir)) 
+  } 
+}
+
+procedure DibujarMemoria(lmc, lmcRep) {
+  let size := bounds(lmc)
+  let (ancho,alto) := memShapeFor_(size)
+  IrAlOrigen() Mover__Veces(Norte,3) Mover__Veces(Este,2)
+  memActual := todasConcatenadas_(mbs(lmc))
+  repeat (size) {
+    PonerElemento_(mbs(lmcRep))
+    PonerContenido_(primero(memActual), lmcRep)
+    memActual := sinElPrimero(memActual)
+    PasarAlSiguienteMB()
+  } 
+}
+
+procedure PasarAlSiguienteMB() {
+  Mover(Este)  
+  if (hayBolitas(Rojo))
+    { IrAlBorde(Oeste)
+      Mover__Veces(Este, 2)
+      Mover(Norte)
+    }
+}
+
+procedure DibujarElementos(lmc, lmcRep) {
+  let size := bounds(lmc)
+  let (ancho,alto) := memShapeFor_(size)
+  emptyCell := (colorDe_(pc(lmcRep)), 0)
+  elemsContainers := [ inp(lmcRep)          , inp(lmcRep)
+                     , emptyCell            , emptyCell
+                     , pc(lmcRep)           , acc(lmcRep)          , neg(lmcRep)
+                     , wz(lmcRep)           , iz(lmcRep)           , dz(lmcRep)
+                     , emptyCell            , emptyCell
+                     , out(lmcRep)          , out(lmcRep)
+                     ]
+  elemsContents   := [ 0                    , 0
+                     , 0                    , 0
+                     , pc(lmc)              , acc(lmc)             , bool2num(neg(lmc))
+                     , numFromMaybe(wz(lmc)), numFromMaybe(iz(lmc)), numFromMaybe(dz(lmc))
+                     , 0                    , 0
+                     , 0                    , 0
+                     ]
+  elems := combinadosDeAPares_Y_(elemsContainers, elemsContents) 
+  IrAlOrigen() Mover(Norte)
+  PonerElementoYContenido_De_(primero(elems), lmcRep)
+  foreach elementYContent in sinElPrimero(elems) {
+    Mover(Este)
+    PonerElementoYContenido_De_(elementYContent, lmcRep)
+  }
+}
+
+procedure DibujarLittleMan(lmc, lmcRep) {
+  IrAlOrigen() Mover__Veces(Norte, 2)
+  Mover__Veces(Este, 4)
+  PonerElemento_(choose halted_(lm(lmcRep)) when (lmc_IsHalted(lmc))
+                        active_(lm(lmcRep)) otherwise)
+}
+
+procedure DibujarInput(lmc, lmcRep) {
+  IrAlOrigen()
+  Mover(Norte)
+  Mover(Este) PonerContenido_(primero(inp(lmc)), lmcRep) Mover(Oeste)
+  PonerLista_(sinElPrimero(inp(lmc)), bounds(lmc), lmcRep)
+}
+
+procedure DibujarOutput(lmc, lmcRep) {
+  IrAlOrigen()
+  Mover(Este) while (hayBolitas(colorDe_(bounds(lmcRep)))) { Mover(Este) }
+  Mover(Norte)
+  Mover(Oeste) PonerContenido_(primero(out(lmc)), lmcRep) Mover(Este)
+  PonerLista_(sinElPrimero(out(lmc)), bounds(lmc), lmcRep)
+}
+
+procedure PonerLista_(lista, size, lmcRep) {
+  let (ancho,alto) := memShapeFor_(size)
+  foreach contentConIndex in combinadosDeAPares_Y_(lista, [1..alto+2]) {
+    let (content, idx) := contentConIndex
+    PonerContenido_(content, lmcRep)
+    Mover(Norte)
+  }
+}
+
+//----------------------------------------------------------
+// Operations to access the representation
+//----------------------------------------------------------
+procedure PonerElementoYContenido_De_(elementYContent, lmcRep) {
+  let (element, content) := elementYContent
+  PonerElemento_(element)
+  PonerContenido_(content, lmcRep)
+}
+
+procedure PonerContenido_(content, lmcRep) {
+   PonerElemento_((colorDe_(contents(lmcRep))
+                 , content
+                 ))  
+}
+
+procedure PonerElemento_(elemRep) {
+  let (color, value) := elemRep
+  Poner__Veces(color, value)
+}
+
+function colorDe_(elemRep) {
+  let (color, valor) := elemRep
+  return (color)
+}
+
+function cantidadDe_(elemRep) {
+  let (color, valor) := elemRep
+  return (valor)
+}
+
+function halted_(lmRep) {
+  let (color, valor) := lmRep
+  return (color, primero(valor))
+}
+
+function active_(lmRep) {
+  let (color, valor) := lmRep
+  return (color, segundo(valor))
+}
+
+function straigthWall_(boundsRep, esVertical) {
+  let (color, valor) := boundsRep
+  return (color, choose primero(valor) when (esVertical) segundo(valor) otherwise)
+}
+
+function isHorizontal_(dir) { return (dir==Norte || dir==Sur) }
+
+function cornerWall_(boundsRep, direction) {
+  let (color, valor) := boundsRep
+  return (color, elemAt_In_(corner2Index(direction), valor))
+}
+
+function corner2Index(dir) {
+   return (matching (dir) select
+             2 on Norte
+             3 on Este
+             4 on Sur
+             5 otherwise
+          )
+}
+
+
+
+//----------------------------------------------------------
+// Operaciones auxiliares para lectura de LMC
+//----------------------------------------------------------
+function widthOfLMCMem() {
+   IrAlOrigen()
+   Mover(Este)
+   widthSoFar := 0
+   while (hayBolitas(Rojo) && puedeMover(Este)) {
+      widthSoFar := widthSoFar + 1
+      Mover(Este)
+   }
+   Assert(not hayBolitas(Rojo), "There is no LM room represented in the board -- no room for output")
+   Assert(widthSoFar == 12, "There is no LM room represented in the board -- wrong width")
+   return(widthSoFar - 2)
+}
+
+function depthOfLMCMem() {
+   IrAlOrigen()
+   Mover(Este)
+   depthSoFar := 0
+   while (hayBolitas(Rojo) && puedeMover(Norte)) {
+      depthSoFar := depthSoFar + 1
+      Mover(Norte)
+   }
+   if (hayBolitas(Rojo)) { depthSoFar := depthSoFar + 1 }
+   Assert(depthSoFar > 4, "There is no LM room represented in the board -- wrong depth")
+   return(depthSoFar - 4)
+}
+
+function sizeOfLMCMem() {
+   IrAlOrigen()
+   Mover__Veces(Este, 2)
+   Mover__Veces(Norte, 3)
+   sizeSoFar := 0
+   while (hayBolitas(Negro)) {
+      sizeSoFar := sizeSoFar + 1
+      PasarAlSiguienteMB()
+   }
+   Assert(sizeSoFar > 1, "There is no LM room represented in the board -- wrong memory size")
+   return(sizeSoFar )
+}
+

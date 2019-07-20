@@ -1,0 +1,23 @@
+//===============================================================
+//===============================================================
+//==== LMC basic Form for representation
+//===============================================================
+//===============================================================
+
+type LMCForm is record {
+  /* PURPOSE: Template for LMCs (can be used for model or viewRep)
+  */
+  field lm        // The Little Man 
+  field pc        // The Program Counter
+  field acc       // The Accumulator
+  field neg       // The flag for NEGative results
+  field inp       // The INPut
+  field out       // The OUTput
+  field mbs       // The MailBoxeS
+  field bounds    // The BOUNDS (number of mailboxes, walls, etc.)
+  field wz        // The Working Zone
+  field iz        // The Instruction Zone
+  field dz        // The Data Zone 
+  field contents  // Information about CONTENTS (number limits, number representation)
+}
+

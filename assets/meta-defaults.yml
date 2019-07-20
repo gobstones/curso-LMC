@@ -1,0 +1,48 @@
+blocks:
+  defaultToolbox: |
+     <category name="Operaciones básicas">
+       <block type="Asignacion"></block>
+       <block type="math_number"></block>
+       <block type="List"></block>
+     </category>
+     <category name="Operaciones de la LMC">
+       <block type="emptyLMCWithMemSize_"></block>
+       <block type="loadInput_On_"></block>
+       <block type="loadProgram_On_"></block>
+       <block type="execute_Program"></block>
+       <block type="execute_Program_Steps"></block>
+     </category>
+     <category name="Mis procedimientos" custom="PROCEDURE_CALLS">
+     </category>
+     <category name="Mis funciones" custom="FUNCTION_CALLS">
+     </category>
+     <category name="Definiciones">
+       <block type="procedures_defnoreturn"></block>
+       <block type="DefinicionDeFuncionSimpleConParametrosDeclarativa"></block>
+       <block type="DefinicionDeFuncionDeclarativa"></block>
+     </category>
+     <category name="Eventos">
+       <block type="InteractiveLetterBinding"></block>
+       <block type="InteractiveNumberBinding"></block>
+       <block type="InteractiveKeyBinding"></block>
+     </category>
+board:
+  active: 1
+  initial_board_source: selected
+  visible_edition: true
+  collapse_toolbox: false
+  user_permissions:
+    can_view_attire_section: true
+    can_edit_board: false
+    can_change_initial_board: false
+    can_change_initial_board_source: false
+    can_view_size_section: false
+execution_speed:
+  active: instantaneous
+  user_permissions:
+    can_change_speed: true
+source:
+  visible: true
+  percentage: 0.80  
+library:
+  visible: false

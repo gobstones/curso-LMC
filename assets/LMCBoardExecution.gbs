@@ -1,0 +1,58 @@
+// REQUIRES: GobstonesAmenities
+// REQUIRES: LMCForm
+// REQUIRES: LMCMem
+// REQUIRES: LMCModel
+// REQUIRES: LMCBoardRep
+
+
+//----------------------------------------------------------
+// LMC's Operations
+//----------------------------------------------------------
+function lmcWithRep_IsHalted(lmcRep) {
+  /* PURPOSE: indicates if the LMC represented in the board is halted or not
+     PRECONDICIONES: there is a valid representation of an LMC based on lmcRep in the board
+
+  */
+  return (nroBolitas(colorDe_(lm(lmcRep))) == halted_(lm(lmcRep)))
+}
+
+
+
+procedure IncrementProgramCounter() {
+  /* PROPÓSITO: incrementa el PC 
+     PRECONDICIONES: 
+       + el LM está delante del PC
+       + no hay nada en la WZ, la DZ o la IZ
+  */
+//  leerPC()
+//  IncrementarPC()
+}
+
+procedure FetchInstruction() {
+  /* PROPÓSITO: lee el PC y marca el MB con ese número, mueve al LM hacia la caja marcada, 
+                lee el dato desmarcando el MB y lo lleva a la WZ 
+     PRECONDICIONES: hay una caja marcada
+  */
+}
+
+procedure DecodeInstruction() {
+  /* PROPÓSITO: decodifica la instrucción de la WZ, vaciándola, y coloca la 
+                instrucción en la IZ. Si hay datos, marca el destino correspondiente
+     PRECONDICIONES: hay una instrucción en la WZ
+  */
+}
+
+procedure FetchData() {
+  /* PROPÓSITO: mueve al LM hacia el destino correspondiente (INP, ACC o MB), 
+                lee el dato desmarcando el destino y lo lleva a la DZ
+     PRECONDICIONES: hay un destino marcado (INP, ACC o MB)
+  */
+}
+
+procedure ExecuteInstruction() {
+  /* PROPÓSITO: ejecuta la instrucción del IZ con el dato del DZ
+     PRECONDICIONES: hay una instrucción en el IZ y un dato en el DZ
+  */
+}
+
+

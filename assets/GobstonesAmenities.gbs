@@ -1,0 +1,109 @@
+//===============================================================
+//===============================================================
+//==== Gobstones Amenities
+//===============================================================
+//===============================================================
+
+//-------------------------------
+// Maybe functions
+//-------------------------------
+type Maybe is variant {
+  case Nothing {}
+  case Just    { field value }
+}
+
+function just(val) { return (Just(value <- val)) }
+function numFromMaybe(maybeNum) {
+  return (matching (maybeNum) select
+            value(maybeNum) on Just
+            0               otherwise
+         )
+}
+
+function bool2num(b) { return (choose 1 when (b) 0 otherwise) }
+
+function fst(par) {
+  let (a,b) := par
+  return (a)
+}
+
+function snd(par) {
+  let (a,b) := par
+  return (b)
+}
+
+//-------------------------------
+// Basic Gobstones functions
+//-------------------------------
+procedure Assert (cond, msg) { if (not cond) { BOOM(msg) } }
+
+/*@ATTRIBUTE@atomic@*/
+procedure Poner__Veces(color,     cantidad) { repeat (cantidad) { Poner(color)     } }
+/*@ATTRIBUTE@atomic@*/
+procedure Sacar__Veces(color,     cantidad) { repeat (cantidad) { Sacar(color)     } }
+/*@ATTRIBUTE@atomic@*/
+procedure Mover__Veces(dirección, cantidad) { repeat (cantidad) { Mover(dirección) } }
+
+procedure IrAlOrigen() { IrAlBorde(Sur) IrAlBorde(Oeste) }
+procedure PasarASiguienteCelda() {
+    if (puedeMover(Este)) { Mover(Este) }
+    else { IrAlBorde(Oeste) Mover(Norte) }
+}
+
+//----------------------------------------------------------
+// Reading and writing of the board
+//----------------------------------------------------------
+function tableroActualDe_X_(ancho, alto) {
+  IrAlOrigen()
+  tablero := [ filaActualDeAncho_(ancho) ]
+  repeat (alto-1) {
+    Mover(Norte)
+    tablero := [ filaActualDeAncho_(ancho) ] ++ tablero
+    
+  }
+  return (tablero)
+}
+
+procedure PonerTablero_(tablero) {
+    VaciarTablero()
+    IrAlOrigen()
+    Mover__Veces(Norte, length(tablero))
+    PonerFila_(primero(tablero))
+    foreach fila in (sinElPrimero(tablero)) {
+        Mover(Sur)
+        PonerFila_(fila)
+    }
+}
+
+function filaActualDeAncho_(ancho) {
+  IrAlBorde(Oeste)
+  fila := [ celdaActual() ]
+  repeat (ancho-1) {
+    Mover(Este)
+    fila := fila ++ [ celdaActual() ]
+  }
+  return (fila)
+}
+
+procedure PonerFila_(fila) {
+    IrAlBorde(Oeste)
+    PonerCelda_(primero(fila))
+    foreach celda in (sinElPrimero(fila)) {
+        Mover(Este)
+        PonerCelda_(celda)
+    }
+}
+
+function celdaActual() {
+   return (nroBolitas(Azul), nroBolitas(Negro)
+         , nroBolitas(Rojo), nroBolitas(Verde))
+}
+
+procedure PonerCelda_(celda) {
+    let (azul, negro, rojo, verde) := celda
+    Poner__Veces(Azul , azul )
+    Poner__Veces(Negro, negro)
+    Poner__Veces(Rojo , rojo )
+    Poner__Veces(Verde, verde)
+}
+
