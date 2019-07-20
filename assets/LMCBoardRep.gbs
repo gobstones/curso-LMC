@@ -162,25 +162,25 @@ procedure DibujarLittleMan(lmc, lmcRep) {
 procedure DibujarInput(lmc, lmcRep) {
   IrAlOrigen()
   Mover(Norte)
-  Mover(Este) PonerContenido_(primero(inp(lmc)), lmcRep) Mover(Oeste)
-  PonerLista_(sinElPrimero(inp(lmc)), bounds(lmc), lmcRep)
+  Poner_ElementosDeLaLista_Para_ConElPrimeroHacia_(bounds(lmc), inp(lmc), lmcRep, Este)
 }
 
 procedure DibujarOutput(lmc, lmcRep) {
   IrAlOrigen()
   Mover(Este) while (hayBolitas(colorDe_(bounds(lmcRep)))) { Mover(Este) }
   Mover(Norte)
-  Mover(Oeste) PonerContenido_(primero(out(lmc)), lmcRep) Mover(Este)
-  PonerLista_(sinElPrimero(out(lmc)), bounds(lmc), lmcRep)
+  Poner_ElementosDeLaLista_Para_ConElPrimeroHacia_(bounds(lmc), out(lmc), lmcRep, Oeste)
 }
 
-procedure PonerLista_(lista, size, lmcRep) {
+procedure Poner_ElementosDeLaLista_Para_ConElPrimeroHacia_(size, lista, lmcRep, dir) {
   let (ancho,alto) := memShapeFor_(size)
-  foreach contentConIndex in combinadosDeAPares_Y_(lista, [1..alto+2]) {
-    let (content, idx) := contentConIndex
-    PonerContenido_(content, lmcRep)
-    Mover(Norte)
-  }
+  elementosQueFaltan := combinadosDeAPares_Y_(lista, [1..alto+4])
+  if (not esVacía(elementosQueFaltan)) {
+    Mover(dir) PonerContenido_(fst(primero(elementosQueFaltan)), lmcRep) Mover(opuesto(dir))
+    foreach contentConIndex in sinElPrimero(elementosQueFaltan) {
+      PonerContenido_(fst(contentConIndex), lmcRep)
+      Mover(Norte)
+  }}
 }
 
 //----------------------------------------------------------
