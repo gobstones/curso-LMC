@@ -4,6 +4,7 @@ blocks:
        <block type="Asignacion"></block>
        <block type="math_number"></block>
        <block type="List"></block>
+       <block type="ExpresionCompletar"></block>
      </category>
      <category name="Operaciones de la LMC">
        <block type="PonerLMC_"></block>
@@ -30,7 +31,7 @@ blocks:
 board:
   active: 1
   initial_board_source: selected
-  visible_edition: true
+  visible_edition: false
   collapse_toolbox: false
   user_permissions:
     can_view_attire_section: true
