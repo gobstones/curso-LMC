@@ -1,0 +1,23 @@
+procedure MostrarLMCInicial(lmc) {
+  PonerLMC_(lmc)
+}
+
+procedure EjecutarLMC(lmc) {
+  PonerLMC_(execute_Program(lmc))
+}
+
+
+interactive program {
+  INIT -> {
+  lmc := loadProgram_On_([901, 902],
+         loadInput_On_([10, 20, 30],
+         emptyLMCWithMemSize_(20)
+         ))
+  }
+  K_1 -> {
+    MostrarLMCInicial(loadProgram_On_([901, 902], loadInput_On_([10, 20, 30], emptyLMCWithMemSize_(20))))
+  }
+  K_RETURN -> {
+    EjecutarLMC(loadProgram_On_([901, 902], loadInput_On_([10, 20, 30], emptyLMCWithMemSize_(20))))
+  }
+}
