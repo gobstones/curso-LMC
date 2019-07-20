@@ -1,15 +1,4 @@
 name: One input to output
-attire:
-  active: None
-  user_permissions:
-    can_toggle_visibility: true
-  visible: false
-blocks:
-  disabled: [ 
-            ]
-  visible:  [ ExpresionCompletar
-            ]
-
 inherit:
   $course: gobstones/curso-lmc
   $assets:
@@ -17,6 +6,7 @@ inherit:
     attires: []
   blocks:
     defaultToolbox: true
+  attire: true
   board: true
   execution_speed: true
   source: true
