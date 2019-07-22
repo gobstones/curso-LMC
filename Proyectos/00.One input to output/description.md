@@ -1,4 +1,4 @@
-#Project: One input to output
+#Lesson: One input to output
 
 In this course we will study a von Neumann architectured computer known as Little Man Computer (LMC).
 This "computer" is composed of one closed room where it lives the Little Man, and inside it there 
@@ -19,7 +19,7 @@ We will be learning how to program the LMC -- that is, use a program to instruct
 his work in order for him to achieve some things for us.
 
 For that, a Gobstones program has been already given, being the LMC program the only part missing.
-The goal of this project is to produce a program that makes the LMC to move its first input into the output.
+The goal for this lesson is to produce a program that makes the LMC to move its first input into the output.
 
 For that, you need to know the following commands:
 + **901**: (INP) moves one value from the Input Slot into the Accumulator,
