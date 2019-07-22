@@ -1,0 +1,14 @@
+name: One input to output
+inherit:
+  $course: gobstones/curso-lmc
+  $assets:
+    extra: true
+    attires: []
+  blocks:
+    defaultToolbox: true
+  attire: true
+  board: true
+  execution_speed: true
+  source: true
+  library: true
+  
