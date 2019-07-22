@@ -1,6 +1,8 @@
+#       <block type="ExpresionCompletar"></block>
 blocks:
   defaultToolbox: |
      <category name="Operaciones básicas">
+       <block type="VaciarTablero"></block>
        <block type="Asignacion"></block>
        <block type="math_number"></block>
        <block type="List"></block>

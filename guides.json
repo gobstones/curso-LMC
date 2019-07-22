@@ -1,5 +1,5 @@
 [
-  { "name": "0.Repaso", "repo": "gobstones/curso-lmc"
+  { "name": "0.Repaso", "repo": "gobstones/curso-LMC"
   , "homeLink": "https://en.wikipedia.org/wiki/Little_man_computer"
   , "exercises": 
     [ { "id": "00", "name": "One input to output"
@@ -7,6 +7,9 @@
       }
     , { "id": "01", "name": "The input, plus two"
       , "path": "Proyectos/01.The input, plus two"
+      }
+    , { "id": "02", "name": "Learning 'forever'"
+      , "path": "Proyectos/02.Learning 'forever'"
       }
     ]
   }
