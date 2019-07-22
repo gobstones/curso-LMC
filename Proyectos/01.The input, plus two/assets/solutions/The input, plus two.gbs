@@ -7,8 +7,7 @@ interactive program {
 procedure MostrarLMCInicial(lmc) { PonerLMC_(lmc)                  }
 procedure EjecutarLMC(lmc)       { PonerLMC_(execute_Program(lmc)) }
 
-function miPrograma() { return ([901, 109, 902, 0, 0
-                                ,  0,   0,   0, 0, 2]) }
+function miPrograma() { return ([901, 105, 902, 0, 2]) }
 function miInput()    { return ([10, 20, 30]) }
 function miLmc()      { return (loadProgram_On_(miPrograma(),
                                 loadInput_On_(miInput(), 

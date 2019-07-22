@@ -1,4 +1,6 @@
-name: One input to output
+name: The input, plus two
+defaultToolbox: 
+   [ ExpresionCompletar ]
 inherit:
   $course: gobstones/curso-lmc
   $assets:

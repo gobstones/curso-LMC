@@ -17,6 +17,6 @@ But, where does the number 2 comes from?
 Yes, a Mailbox!
 You should store the number 2 into some Mailbox, and use it as data.
 Be aware! The Mailbox used as data storage must not be part of the program.
-For example, you can use the Mailbox 9 for it.
+For example, you can use the Mailbox number 4 for it (we already gave put it there for you).
 
-The LMC is yours!
+The LMC is yours. Complete the program!

@@ -4,7 +4,7 @@ interactive program {
   K_RETURN -> { EjecutarLMC(miLmc())       }
 }
 
-function miPrograma() { return ([...]) }
+function miPrograma() { return ([...,...,...,0,2]) }
 
 procedure MostrarLMCInicial(lmc) { PonerLMC_(lmc)                  }
 procedure EjecutarLMC(lmc)       { PonerLMC_(execute_Program(lmc)) }
