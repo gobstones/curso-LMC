@@ -1,0 +1,14 @@
+name: Learning 'forever'
+inherit:
+  $course: gobstones/curso-LMC
+  $assets:
+    extra: true
+    attires: []
+  blocks:
+    defaultToolbox: true
+  attire: true
+  board: true
+  execution_speed: true
+  source: true
+  library: true
+  
