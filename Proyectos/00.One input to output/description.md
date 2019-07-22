@@ -32,6 +32,6 @@ For that, you need to know the following commands:
 
 One last thing. The Gobstones program uses two keys for you to be able to see what is going on:
 + **<1>**: (the key with the number "one") shows the initial configuration of the LMC,
-+ **<RET>**: (the "carriage return" key) shows the final configuration of the LMC for the given program (or loops, if the LMC loops).
++ **ENTER**: (the "carriage return" key) shows the final configuration of the LMC for the given program (or loops, if the LMC loops).
 
 Let's get down to work!
