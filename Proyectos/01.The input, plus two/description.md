@@ -9,7 +9,7 @@ The following commands may come handy:
 + **1xx**: (ADD) adds the value of Mailbox _xx_ to the current value of the Accumulator, replacing its old value.
                  It does not affect the Mailbox.
 
-> ** The Accumulator (2)
+> **The Accumulator (2)**
 >
 > The (ADD) command shows why the _Accumulator_ is called that way: it _accumulates_ values in it.
 
