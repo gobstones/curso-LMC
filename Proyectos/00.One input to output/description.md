@@ -25,7 +25,7 @@ For that, you need to know the following commands:
 + **901**: (INP) moves one value from the Input Slot into the Accumulator,
 + **902**: (OUT) moves the value in the Accumulator into the Output Slot.
 
-> ** The Accumulator
+> **The Accumulator**
 >
 > The *Accumulator* is one of the elements of the LMC. 
 > It can contain one number at a time, and can be used with some other instructions we will see later.
