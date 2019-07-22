@@ -1,13 +1,15 @@
 interactive program {
-  INIT     -> { lmc := miLmc()             }
+  INIT     -> { theLMC := miLmc()          }
   K_1      -> { MostrarLMCInicial(miLmc()) }
   K_RETURN -> { EjecutarLMC(miLmc())       }
+  K_ESCAPE -> { VaciarTablero()            }
 }
+
+function miPrograma() { return ([901,104,902,0,2]) }
 
 procedure MostrarLMCInicial(lmc) { PonerLMC_(lmc)                  }
 procedure EjecutarLMC(lmc)       { PonerLMC_(execute_Program(lmc)) }
 
-function miPrograma() { return ([901, 105, 902, 0, 2]) }
 function miInput()    { return ([10, 20, 30]) }
 function miLmc()      { return (loadProgram_On_(miPrograma(),
                                 loadInput_On_(miInput(), 

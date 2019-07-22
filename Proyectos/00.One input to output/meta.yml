@@ -1,6 +1,6 @@
 name: One input to output
 inherit:
-  $course: gobstones/curso-lmc
+  $course: gobstones/curso-LMC
   $assets:
     extra: true
     attires: []

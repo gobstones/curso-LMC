@@ -6,7 +6,7 @@ The goal is to copy one value on the Input into the Output, but this time it sho
 Instead, the number that is output must be **two** units bigger than the one that was input.
 
 The following commands may come handy:
-+ **1xx**: (ADD) adds the value of Mailbox _xx_ to the current value of the Accumulator, replacing its old value.
++ **`1`xx**: (ADD) adds the value of Mailbox _xx_ to the current value of the Accumulator, replacing its old value.
                  It does not affect the Mailbox.
 
 > **The Accumulator (2)**

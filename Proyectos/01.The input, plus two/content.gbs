@@ -1,7 +1,8 @@
 interactive program {
-  INIT     -> { lmc := miLmc()             }
+  INIT     -> { theLMC := miLmc()          }
   K_1      -> { MostrarLMCInicial(miLmc()) }
   K_RETURN -> { EjecutarLMC(miLmc())       }
+  K_ESCAPE -> { VaciarTablero()            }
 }
 
 function miPrograma() { return ([...,...,...,0,2]) }
