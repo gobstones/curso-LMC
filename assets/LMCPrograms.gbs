@@ -8,7 +8,7 @@
 /* program {
     lmc := loadInput_On_([10,20,30],
            loadProgram_On_(accumulatesInpToOut(),
-           emptyLMCWithMemSize_(20)
+           emptyLMCWithMemSize_AndWidth_(20, 10)
            ))
     
     return (execute_Program(lmc))

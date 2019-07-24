@@ -44,10 +44,36 @@ procedure Sacar__Veces(color,     cantidad) { repeat (cantidad) { Sacar(color)  
 /*@ATTRIBUTE@atomic@*/
 procedure Mover__Veces(dirección, cantidad) { repeat (cantidad) { Mover(dirección) } }
 
+procedure MoverHacia__Veces(dirección, cantidad) {
+  if (cantidad >= 0) 
+       { Mover__Veces(dirección         , cantidad)          }
+  else { Mover__Veces(opuesto(dirección), opuesto(cantidad)) }
+}
+
 procedure IrAlOrigen() { IrAlBorde(Sur) IrAlBorde(Oeste) }
 procedure PasarASiguienteCelda() {
     if (puedeMover(Este)) { Mover(Este) }
     else { IrAlBorde(Oeste) Mover(Norte) }
+}
+
+procedure IrACoord_(coord) {
+  let (x,y) := coord
+  IrAlOrigen()
+  Mover__Veces(Este , x)
+  Mover__Veces(Norte, y)
+}
+
+procedure IrACoord_Desde_(coordDestino, coordActual) {
+  let (x0,y0) := coordActual
+  let (x1,y1) := coordDestino
+  MoverHacia__Veces(Este , x1-x0)
+  MoverHacia__Veces(Norte, y1-y0)
+}
+
+function displace_From_(offset, baseCoord) {
+  let (dx,dy) := offset
+  let (x ,y ) := baseCoord
+  return (x+dx, y+dy)
 }
 
 //----------------------------------------------------------
