@@ -43,13 +43,17 @@ function emptyLMCWithMemSize_AndWidth_(memSize, memWidth) {
                 , inp      <- []                    // The INPut is initially empty
                 , out      <- []                    // The OUTput is initially empty
                 , mbs      <- emptyMemOf_(myBounds) // The MailBoxeS all in zero
-                , bounds   <- myBounds              // The BOUNDS is the number of available mailboxes
+                , bounds   <- myBounds              // The BOUNDS are the number of available mailboxes, and the width of a row
                 , wz       <- Nothing               // The Working Zone is not set
                 , iz       <- Nothing               // The Instruction Zone is not set
                 , dz       <- Nothing               // The Data Zone is not set
                 , contents <- 100                   // The base to separate instructions from data
          ))
 }
+
+function lmc_MemSize(lmc)   { return(fst(bounds(lmc)))              }
+function lmc_MemWidth(lmc)  { return(snd(bounds(lmc)))              }
+function lmc_MemHeigth(lmc) { return(snd(memShapeOf_(bounds(lmc)))) }
 
 function loadInput_On_(input, lmc) {
   return (LMCForm (lmc | inp <- input))

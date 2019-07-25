@@ -32,6 +32,16 @@ function snd(par) {
   return (b)
 }
 
+function max(a,b) {
+  return (choose a when (a>b) 
+                 b otherwise)
+}
+
+function min(a,b) {
+  return (choose a when (a<b) 
+                 b otherwise)
+}
+
 //-------------------------------
 // Basic Gobstones functions
 //-------------------------------
@@ -56,6 +66,10 @@ procedure PasarASiguienteCelda() {
     else { IrAlBorde(Oeste) Mover(Norte) }
 }
 
+function coordActual() {
+  return(distanciaAlBorde_(Oeste), distanciaAlBorde_(Sur))
+}
+
 procedure IrACoord_(coord) {
   let (x,y) := coord
   IrAlOrigen()
@@ -76,10 +90,16 @@ function displace_From_(offset, baseCoord) {
   return (x+dx, y+dy)
 }
 
+function distanciaAlBorde_(dir) {
+  pasosDados := 0
+  while (puedeMover(dir)) { pasosDados := pasosDados + 1 }
+  return (pasosDados)
+}
+
 //----------------------------------------------------------
 // Reading and writing of the board
 //----------------------------------------------------------
-function tableroActualDe_X_(ancho, alto) {
+function tableroActualDe_x_(ancho, alto) {
   IrAlOrigen()
   tablero := [ filaActualDeAncho_(ancho) ]
   repeat (alto-1) {

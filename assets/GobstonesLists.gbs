@@ -4,9 +4,8 @@
 //===============================================================
 //===============================================================
 
-function segundo(list) {
-  return (primero(sinElPrimero(list)))
-}
+function segundo(list)           { return (primero(sinElPrimero(list)))     }
+function sinLosDosPrimeros(list) { return(sinElPrimero(sinElPrimero(list))) }
 
 function length(list) { 
   elemSeenSoFar := 0
@@ -26,12 +25,16 @@ function elem_Replicado_Veces(elem, cant) {
   return (new)
 }
 
+function take(cant, list) { return(fst(splitList_At_(list, cant))) }
+
 function splitList_At_(list, idx) {
   before := []
   after  := list
-  repeat (idx) {
+  pos    := 0
+  while (pos<idx && not esVacía(after)) {
     before := before ++ [ primero(after) ]
     after  := sinElPrimero (after)
+    pos := pos + 1
   }
   return (before, after)
 }
