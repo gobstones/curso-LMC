@@ -45,7 +45,7 @@ function min(a,b) {
 //-------------------------------
 // Basic Gobstones functions
 //-------------------------------
-procedure Assert (cond, msg) { if (not cond) { BOOM(msg) } }
+procedure Assert_OrFailWith_(cond, msg) { if (not cond) { BOOM(msg) } }
 
 /*@ATTRIBUTE@atomic@*/
 procedure Poner__Veces(color,     cantidad) { repeat (cantidad) { Poner(color)     } }
@@ -60,6 +60,9 @@ procedure MoverHacia__Veces(dirección, cantidad) {
   else { Mover__Veces(opuesto(dirección), opuesto(cantidad)) }
 }
 
+//-------------------------------
+// Gobstones positioning
+//-------------------------------
 procedure IrAlOrigen() { IrAlBorde(Sur) IrAlBorde(Oeste) }
 procedure PasarASiguienteCelda() {
     if (puedeMover(Este)) { Mover(Este) }

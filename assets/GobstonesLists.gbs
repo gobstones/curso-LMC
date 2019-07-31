@@ -25,7 +25,7 @@ function elem_Replicado_Veces(elem, cant) {
   return (new)
 }
 
-function take(cant, list) { return(fst(splitList_At_(list, cant))) }
+function take_ElemsFrom_(cant, list) { return(fst(splitList_At_(list, cant))) }
 
 function splitList_At_(list, idx) {
   before := []

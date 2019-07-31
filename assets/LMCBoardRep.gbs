@@ -12,7 +12,7 @@
 // program {
 //   lmc := loadInput_On_([10,20,30],
 //          loadProgram_On_([901, 902],
-//          emptyLMCWithMemSize_(20)
+//          emptyLMCWithMemSize_AndWidth_(20,10)
 //          ))
 //   PonerLMC_WithRep_InPlace_( lmc
 //                            , lmcRepresentation()
@@ -92,7 +92,7 @@ function lmcPlacementForMemWidth_(memWidth) {
                         . i  panwid  o.    (Elements -- at the base)
                           \==========/
    */
-  Assert(memWidth>=6, "Width too small for this placement -- memWidth must be >=6, for 6 elements")
+  Assert_OrFailWith_(memWidth>=6, "Width too small for this placement -- memWidth must be >=6, for 6 elements")
   elemsOffset := (memWidth-6) div 2 + 1
   width := memWidth + 2 // Place for the 2 walls
   return (LMCForm(lm       <-  (  elemsOffset,2)         // The Little Man place position
@@ -258,7 +258,7 @@ procedure PonerElemento_ConContenido_De_En_Desde_(element, content, lmcRep, dest
 }
 
 procedure Poner_ElementosDeLaLista_ParaRep_ConElPrimeroHacia_(alto, lista, lmcRep, dir) {
-  elementosQueFaltan  := take(min(alto, length(lista)), lista)
+  elementosQueFaltan  := take_ElemsFrom_(min(alto, length(lista)), lista)
   if (not esVacía(elementosQueFaltan)) {
     // The first element, on the slot
     PonerContenido_(primero(elementosQueFaltan), lmcRep)
@@ -346,8 +346,8 @@ function widthOfLMCMem() {
       widthSoFar := widthSoFar + 1
       Mover(Este)
    }
-   Assert(not hayBolitas(Rojo), "There is no LM room represented in the board -- no room for output")
-   Assert(widthSoFar == 12, "There is no LM room represented in the board -- wrong width")
+   Assert_OrFailWith_(not hayBolitas(Rojo), "There is no LM room represented in the board -- no room for output")
+   Assert_OrFailWith_(widthSoFar == 12, "There is no LM room represented in the board -- wrong width")
    return(widthSoFar - 2)
 }
 
@@ -360,7 +360,7 @@ function depthOfLMCMem() {
       Mover(Norte)
    }
    if (hayBolitas(Rojo)) { depthSoFar := depthSoFar + 1 }
-   Assert(depthSoFar > 4, "There is no LM room represented in the board -- wrong depth")
+   Assert_OrFailWith_(depthSoFar > 4, "There is no LM room represented in the board -- wrong depth")
    return(depthSoFar - 4)
 }
 
@@ -373,7 +373,7 @@ function sizeOfLMCMem() {
       sizeSoFar := sizeSoFar + 1
       PasarAlSiguienteMB()
    }
-   Assert(sizeSoFar > 1, "There is no LM room represented in the board -- wrong memory size")
+   Assert_OrFailWith_(sizeSoFar > 1, "There is no LM room represented in the board -- wrong memory size")
    return(sizeSoFar )
 }
 

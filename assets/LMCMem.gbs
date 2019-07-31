@@ -6,13 +6,25 @@
 // REQUIRES: GobstonesAmenities
 // REQUIRES: GobstonesLists
 
+/*
+    A Memory of bounds (size, width) is a disposition of elements in rows of at most width elements.
+    All rows except possibly the last one contains exactly width elements.
+    A given bounds is *valid* if both components are > 0.
+*/
+
 function memShapeOf_(bounds) {
+  /* PURPOSE: calculates the shape of a memory with bounds (size, width) given
+     PRECONDITION: bounds is valid
+     OBSERVATION: a shape is a pair (width, depth)
+  */
   let (size, width) := bounds
   return (width, 1 + (size-1) div width)    
 }
-function memSizeOf_(memS)   { let (x,y) := memS; return (x*y) }
+function maxMemSizeForShape_(memSh)   { let (x,y) := memSh; return (x*y) }
 
 function emptyMemOf_(bounds) {
+  /* PRECONDITION: bounds is valid
+  */
   let (size, width) := bounds
   let (x,y) := memShapeOf_(bounds)
   return (choose elem_Replicado_Veces(emptyRowOfSize_(x),y-1) ++ [ emptyRowOfSize_(size mod x) ] when (size mod x > 0)
@@ -22,7 +34,9 @@ function emptyMemOf_(bounds) {
 
 function emptyRowOfSize_(size) { return (elem_Replicado_Veces(0,size)) }
 
-function memOf_With_(bounds, prog) {
+function newMemOf_WithContents_(bounds, prog) {
+  /* PRECONDITION: bounds is valid
+  */
   let (size, width) := bounds
   let (x,y) := memShapeOf_(bounds)
   paddedProg := prog ++ elem_Replicado_Veces(0, size-length(prog))
@@ -30,9 +44,11 @@ function memOf_With_(bounds, prog) {
   return (programToLoad)
 }
 
-function decodeIndex_For_CalledBy_WhenDecoding_(index, bounds, caller, dataSource) {
+function decodeIndex_ForBounds_CalledBy_WhenDecoding_(index, bounds, caller, dataSource) {
+  /* PRECONDITION: bounds is valid, 0 <= index < size
+  */
   let (size, depth) := bounds
-  Assert(index < size, "Out of memory bounds at ") // ++ caller ++ " decoding " ++ dataSource)
+  Assert_OrFailWith_(index < size, "Out of memory bounds at ") // ++ caller ++ " decoding " ++ dataSource)
                                                                // Strings are not lists... :(
   let (x,y) := memShapeOf_(bounds)
   i := index mod x
@@ -41,12 +57,16 @@ function decodeIndex_For_CalledBy_WhenDecoding_(index, bounds, caller, dataSourc
 }
 
 function fetchPos_From_(pos, mem) {
+  /* PRECONDITION: (0,0) <= pos < boundsOfMem_(mem)
+  */
    let (i,j) := pos
    row := elemAt_In_(j, mem)
    return (elemAt_In_(i, row))
 }
 
 function setPos_To_InMem_(pos, val, mem) {
+  /* PRECONDITION: (0,0) <= pos < boundsOfMem_(mem)
+  */
   let (i,j) := pos
   let (before, after) := splitList_At_(mem, j)
   row := primero (after)
@@ -57,6 +77,8 @@ function setPos_To_InMem_(pos, val, mem) {
 }
 
 function setIndex_To_InRow_(idx, val, row) {
+  /* PRECONDITION: 0 <= idx < length(row)
+  */
   let (before, after) := splitList_At_(row, idx)
   return (before
          ++ [ val ]

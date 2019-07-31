@@ -27,14 +27,26 @@
 
 //-------------------------------
 // LMC external operations
+//    function emptyLMCWithMemSize_AndWidth_(memSize, memWidth)
+//      /* PRECONDITIONS:memSize (the number of MailBoxeS) is <= 100 */
+//    function lmc_MemSize(lmc)
+//    function lmc_MemWidth(lmc)
+//    function lmc_MemHeigth(lmc)
+//    function loadInput_On_(input, lmc)
+//    function loadProgram_On_(prog, lmc)
+//    function execute_Program(lmc)
+//    function debug_Program_Steps(lmc, cant)
+//    function execute_Program_Steps(lmc, cant)
+//    function execute_ProgramOneStep(lmc)
+//    function inspectDebugFor_AtStep_(lmc, steps)
 //-------------------------------
-/*@ATTRIBUTE@block_name@empty LMC with mem size_@*/
+/*@ATTRIBUTE@block_name@empty LMC with mem size_ and width_@*/
 function emptyLMCWithMemSize_AndWidth_(memSize, memWidth) {
   /* PURPOSE: describes a LMCForm of type LMCModel, with an empty configuration
      PRECONDITIONS:
        * memSize (the number of MailBoxeS) is <= 100
   */
-  Assert(memSize <= 100, "Memory too big in emptyLMC -- it must be <= 100")
+  Assert_OrFailWith_(memSize <= 100, "Memory too big in emptyLMC -- it must be <= 100")
   let myBounds := (memSize, memWidth)
   return (LMCForm(lm       <- True                  // The Little Man starts active
                 , pc       <- 0                     // The Program Counter in 0
@@ -61,8 +73,8 @@ function loadInput_On_(input, lmc) {
 
 function loadProgram_On_(prog, lmc) {
   let (size, width) := bounds(lmc)
-  Assert(length(prog) <= size, "Program too big in loadProgram_On_ -- consider using a bigger memory")
-  memWithProg := memOf_With_(bounds(lmc), prog)
+  Assert_OrFailWith_(length(prog) <= size, "Program too big in loadProgram_On_ -- consider using a bigger memory")
+  memWithProg := newMemOf_WithContents_(bounds(lmc), prog)
   return (LMCForm (lmc | mbs <- memWithProg))
 }
 
@@ -101,7 +113,7 @@ function inspectDebugFor_AtStep_(lmc, steps) {
     lmcToSee := fetchData_             (
          decodeInstruction_    (
          fetchInstruction_(lmcToSee)))
-    dataAddr := decodeIndex_For_CalledBy_WhenDecoding_(value(wz(lmcToSee)) mod 100, bounds(lmcToSee), "inspectDebugFor_AtStep_", "WZ")
+    dataAddr := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(wz(lmcToSee)) mod 100, bounds(lmcToSee), "inspectDebugFor_AtStep_", "WZ")
     return(value(wz(lmcToSee)), value(iz(lmcToSee))
           , dataAddr
           , fetchPos_From_(dataAddr, mbs(lmcToSee))
@@ -156,7 +168,7 @@ function staLMC_(lmc) {
   /* PURPOSE: describes the lmc after executing a STA instruction
      PRECONDITIONS: the LMC is not halted and the Data Zone is set
   */
-  pos := decodeIndex_For_CalledBy_WhenDecoding_(value(dz(lmc)), bounds(lmc), "STA", "DZ")
+  pos := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(dz(lmc)), bounds(lmc), "STA", "DZ")
   return (LMCForm (lmc |
             mbs <- setPos_To_InMem_(pos, acc(lmc), mbs(lmc))
          ))
@@ -166,7 +178,7 @@ function ldaLMC_(lmc) {
   /* PURPOSE: describes the lmc after executing a LDA instruction
      PRECONDITIONS: the LMC is not halted and the Data Zone is set
   */
-  pos := decodeIndex_For_CalledBy_WhenDecoding_(value(dz(lmc)), bounds(lmc), "LDA", "DZ")
+  pos := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(dz(lmc)), bounds(lmc), "LDA", "DZ")
   return (LMCForm (lmc | 
             acc <- fetchPos_From_(pos, mbs(lmc))
          ))
@@ -250,7 +262,7 @@ function fetchInstruction_(lmc) {
   /* PURPOSE: describes the lmc after setting the Working Zone according to the MailBox value given by the Program Counter
      PRECONDITIONS: the LMC is not halted
   */
-  memPos := decodeIndex_For_CalledBy_WhenDecoding_(pc(lmc), bounds(lmc), "fetchInstruction_", "PC")
+  memPos := decodeIndex_ForBounds_CalledBy_WhenDecoding_(pc(lmc), bounds(lmc), "fetchInstruction_", "PC")
   return (LMCForm (lmc | 
             wz <- just(fetchPos_From_(memPos, mbs(lmc)))
          ))
@@ -271,7 +283,7 @@ function fetchData_(lmc) {
   */
   insCode   := value(iz(lmc))
   dataIndex := value(wz(lmc)) mod 100
-  dataAddr  := decodeIndex_For_CalledBy_WhenDecoding_(dataIndex, bounds(lmc), "fetchData_", "dataIndex of opCode")
+  dataAddr  := decodeIndex_ForBounds_CalledBy_WhenDecoding_(dataIndex, bounds(lmc), "fetchData_", "dataIndex of opCode")
   data      := fetchPos_From_(dataAddr, mbs(lmc))
   return (LMCForm(lmc | 
             dz <- dataAccordingToSourceFor_Between_And_(insCode, dataIndex, data)
