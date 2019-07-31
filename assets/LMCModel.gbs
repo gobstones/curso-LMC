@@ -26,22 +26,22 @@
 //-------------------------------
 
 //-------------------------------
-// LMC external operations
-//    function emptyLMCWithMemSize_AndWidth_(memSize, memWidth)
+// LMCModel external operations
+//    function emptyLMCModelWithMemSize_AndMemWidth_(memSize, memWidth)
 //      /* PRECONDITIONS:memSize (the number of MailBoxeS) is <= 100 */
-//    function lmc_MemSize(lmc)
-//    function lmc_MemWidth(lmc)
-//    function lmc_MemHeigth(lmc)
-//    function loadInput_On_(input, lmc)
-//    function loadProgram_On_(prog, lmc)
-//    function execute_Program(lmc)
-//    function debug_Program_Steps(lmc, cant)
-//    function execute_Program_Steps(lmc, cant)
-//    function execute_ProgramOneStep(lmc)
-//    function inspectDebugFor_AtStep_(lmc, steps)
+//    function lmcModel_memSize(lmc)
+//    function lmcModel_memWidth(lmc)
+//    function lmcModel_memHeigth(lmc)
+//    function lmcModel_loadInput_(lmc, input)
+//    function lmcModel_loadProgram_(lmc, prog)
+//    function lmcModel_executeProgram(lmc)
+//    function lmcModel_debugProgram_Steps(lmc, cant)
+//    function lmcModel_executeProgram_Steps(lmc, cant)
+//    function lmcModel_executeProgrammOneStep(lmc)
+//    function lmcModel_inspectDebugAtStep_(lmc, steps)
 //-------------------------------
 /*@ATTRIBUTE@block_name@empty LMC with mem size_ and width_@*/
-function emptyLMCWithMemSize_AndWidth_(memSize, memWidth) {
+function emptyLMCModelWithMemSize_AndMemWidth_(memSize, memWidth) {
   /* PURPOSE: describes a LMCForm of type LMCModel, with an empty configuration
      PRECONDITIONS:
        * memSize (the number of MailBoxeS) is <= 100
@@ -63,42 +63,44 @@ function emptyLMCWithMemSize_AndWidth_(memSize, memWidth) {
          ))
 }
 
-function lmc_MemSize(lmc)   { return(fst(bounds(lmc)))              }
-function lmc_MemWidth(lmc)  { return(snd(bounds(lmc)))              }
-function lmc_MemHeigth(lmc) { return(snd(memShapeOf_(bounds(lmc)))) }
+function lmcModel_isHalted(lmc)  { return(aux_lmcModel_isHalted(lmc))    }
 
-function loadInput_On_(input, lmc) {
+function lmcModel_memSize(lmc)   { return(fst(bounds(lmc)))              }
+function lmcModel_memWidth(lmc)  { return(snd(bounds(lmc)))              }
+function lmcModel_memHeigth(lmc) { return(snd(memShapeOf_(bounds(lmc)))) }
+
+function lmcModel_loadInput_(lmc, input) {
   return (LMCForm (lmc | inp <- input))
 }
 
-function loadProgram_On_(prog, lmc) {
+function lmcModel_loadProgram_(lmc, prog) {
   let (size, width) := bounds(lmc)
-  Assert_OrFailWith_(length(prog) <= size, "Program too big in loadProgram_On_ -- consider using a bigger memory")
+  Assert_OrFailWith_(length(prog) <= size, "Program too big in lmcModel_loadProgram_ -- consider using a bigger memory")
   memWithProg := newMemOf_WithContents_(bounds(lmc), prog)
   return (LMCForm (lmc | mbs <- memWithProg))
 }
 
-function execute_Program(lmc) {
+function lmcModel_executeProgram(lmc) {
   currentLMC := lmc
-  while (not lmc_IsHalted(currentLMC)) {
-    currentLMC := execute_ProgramOneStep(currentLMC)
+  while (not aux_lmcModel_isHalted(currentLMC)) {
+    currentLMC := lmcModel_executeProgramOneStep(currentLMC)
   }
   return (currentLMC)
 }
 
-function debug_Program_Steps(lmc, cant) {
+function lmcModel_debugProgram_Steps(lmc, cant) {
   incrementalExec := []
-  foreach i in [0..cant] { incrementalExec := incrementalExec ++ [execute_Program_Steps(i,lmc) ] } 
+  foreach i in [0..cant] { incrementalExec := incrementalExec ++ [lmcModel_executeProgram_Steps(i,lmc) ] } 
   return (incrementalExec)
 }
 
-function execute_Program_Steps(lmc, cant) {
+function lmcModel_executeProgram_Steps(lmc, cant) {
   currentLMC := lmc
-  repeat (cant) { currentLMC := execute_ProgramOneStep(currentLMC) }
+  repeat (cant) { currentLMC := lmcModel_executeProgramOneStep(currentLMC) }
   return (currentLMC)
 }
 
-function execute_ProgramOneStep(lmc) {
+function lmcModel_executeProgramOneStep(lmc) {
   return(executeInstruction_      (
          incrementProgramCounter_(    // If this is done after executing the instruction, the PC is not right
          fetchData_             (
@@ -107,13 +109,13 @@ function execute_ProgramOneStep(lmc) {
         )                  
 }
 
-function inspectDebugFor_AtStep_(lmc, steps) {
-    ds       := debug_Program_Steps(lmc,steps)
-    lmcToSee := elemAt_In_(steps-1,ds)
+function lmcModel_inspectDebugAtStep_(lmc, step) {
+    ds       := lmcModel_debugProgram_Steps(lmc,step)
+    lmcToSee := elemAt_In_(step-1,ds)
     lmcToSee := fetchData_             (
          decodeInstruction_    (
          fetchInstruction_(lmcToSee)))
-    dataAddr := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(wz(lmcToSee)) mod 100, bounds(lmcToSee), "inspectDebugFor_AtStep_", "WZ")
+    dataAddr := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(wz(lmcToSee)) mod 100, bounds(lmcToSee), "lmcModel_inspectDebugAtStep_", "WZ")
     return(value(wz(lmcToSee)), value(iz(lmcToSee))
           , dataAddr
           , fetchPos_From_(dataAddr, mbs(lmcToSee))
@@ -132,10 +134,10 @@ function resetsInsLMC_(lmc) {
          ))
 }
 
-function resetsPC_(lmc)    { return (LMCForm (lmc | pc  <- 0))     }
-function setNegLMC_(lmc)   { return (LMCForm (lmc | neg <- True))  }
-function clearNegLMC_(lmc) { return (LMCForm (lmc | neg <- False)) }
-function lmc_IsHalted(lmc) { return(not lm(lmc))                   }
+function resetsPC_(lmc)             { return(LMCForm (lmc | pc  <- 0))     }
+function setNegLMC_(lmc)            { return(LMCForm (lmc | neg <- True))  }
+function clearNegLMC_(lmc)          { return(LMCForm (lmc | neg <- False)) }
+function aux_lmcModel_isHalted(lmc) { return(not lm(lmc))                  }
 
 //-------------------------------
 // LMC Instructions

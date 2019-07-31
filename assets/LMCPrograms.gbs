@@ -6,12 +6,12 @@
 // REQUIRES: LMCModel
 
 /* program {
-    lmc := loadInput_On_([10,20,30],
-           loadProgram_On_(accumulatesInpToOut(),
-           emptyLMCWithMemSize_AndWidth_(20, 10)
+    lmc := loadInput_OnLMC_([10,20,30],
+           loadProgram_OnLMC_(accumulatesInpToOut(),
+           emptyLMCWithMemSize_AndMemWidth_(20, 10)
            ))
     
-    return (execute_Program(lmc))
+    return (lmcModel_executeProgram(lmc))
 }
  */
 

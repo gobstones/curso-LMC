@@ -20,11 +20,3 @@ type LMCForm is record {
   field dz        // The Data Zone 
   field contents  // Information about CONTENTS (number limits, number representation)
 }
-
-type LMC is record {
-  /* PURPOSE: Template for LMCs (can be used for model or viewRep)
-  */
-  field model            // The actual data of the LMC
-  field representation   // The way each element is represented in the board
-  field shape            // Where to put each element in the board
-}

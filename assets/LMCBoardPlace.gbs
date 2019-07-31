@@ -1,0 +1,124 @@
+//===============================================================
+//===============================================================
+//==== LMC Board Placement
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+// REQUIRES: LMCForm
+// REQUIRES: LMCMem
+// REQUIRES: LMCModel
+
+
+//----------------------------------------------------------
+// LMC's Board Placement
+//   function lmcPlacementForMemWidth_(memWidth)
+//      /* PRECONDITIONS: memWidth>=6 */
+//   function lmcPlace_absoluteBASEplace(lmcPlace)
+//   function lmcPlace_absoluteLMplace  (lmcPlace)
+//   function lmcPlace_absolutePCplace  (lmcPlace)
+//   function lmcPlace_absoluteACCplace (lmcPlace)
+//   function lmcPlace_absoluteNEGplace (lmcPlace)
+//   function lmcPlace_absoluteINPplace (lmcPlace)
+//   function lmcPlace_absoluteOUTplace (lmcPlace)
+//   function lmcPlace_absoluteMBSplace (lmcPlace)
+//   function lmcPlace_absoluteWZplace  (lmcPlace)
+//   function lmcPlace_absoluteIZplace  (lmcPlace)
+//   function lmcPlace_absoluteDZplace  (lmcPlace)
+//   function lmcPlace_baseHeight(lmcPlace)
+//   function lmcPlace_wallsHeight(lmcPlace)
+//   function lmcPlace_wallsWidth(lmcPlace)
+//   function lmcPlace_IOWidth(lmcPlace)
+//   function lmcPlace_setOriginTo_(lmcPlace, coord)
+//----------------------------------------------------------
+//type Coord is (Número, Número)
+//type LMCBoardPlace is LMCForm(
+//    /* The inp and out occupy 2 cells, and mbs and bounds are the origin of a square.
+//       The space ocupied is calculated according to the actual lmc.
+//    */
+//      lm       -> Coord               // Relative to bounds
+//    , pc       -> Coord               // Relative to bounds
+//    , acc      -> Coord               // Relative to bounds
+//    , neg      -> Coord               // Relative to bounds
+//    , inp      -> (Coord, Dirección)  // Base coord, dir of second coord, relative to bounds
+//    , out      -> (Coord, Dirección)  // Base coord, dir of second coord, relative to bounds
+//    , mbs      -> Coord               // LowerLeft corner, relative to bounds
+//    , bounds   -> Coord               // LowerLeft corner, absolute
+//    , wz       -> Coord               // Relative to bounds
+//    , iz       -> Coord               // Relative to bounds
+//    , dz       -> Coord               // Relative to bounds
+//    , contents -> Coord               // Current position, relative (ideally, the same of LM)
+//}
+
+//----------------------------------------------------------
+function lmcPlacementForMemWidth_(memWidth) {
+   /* PURPOSE: describes a LMCForm of type LMCBoardPlace, with the absolute positions of elements in an LMC
+      PRECONDITIONS: memWidth>=6
+      OBSERVATION: the lmc final drawing depends on memory shape. 
+                   Walls surround the memory Mailboxes tightly.
+                   Placement of elements must be according to that, on the base.
+                   (Usually, at the base -- see function baseHeight)
+                        ./==========\.
+                        .|mmmmmmm   |.
+                        .|mmmmmmmmmm|.  Memory
+                        .|mmmmmmmmmm|.
+                        .|  l       |.  Base
+                        ii  panwid  oo    (Elements -- at the base)
+                         \==========/
+   */
+  Assert_OrFailWith_(memWidth>=6, "Width too small for this placement -- memWidth must be >=6, for 6 elements")
+  elemsOffset := (memWidth-6) div 2 + 1
+  width := memWidth + 2*aux_WallThickness()              // Space required by the memory + walls
+  return (LMCForm(contents <-  (            0,0)         // The origin, absolute
+                , bounds   <-  (            1,0)         // The BOUNDS walls left corner place position, relative to contents
+                , inp      <- ((            0,1), Oeste) // The INPut place position, relative to bounds, and where to continue
+                , lm       <-  (elemsOffset+0,2)         // The Little Man place position
+                , pc       <-  (elemsOffset+0,1)         // The Program Counter place position
+                , acc      <-  (elemsOffset+1,1)         // The Accumulator place position
+                , neg      <-  (elemsOffset+2,1)         // The NEGative flag place position
+                , wz       <-  (elemsOffset+3,1)         // The Working Zone place position
+                , iz       <-  (elemsOffset+4,1)         // The Instruction Zone place position
+                , dz       <-  (elemsOffset+5,1)         // The Data Zone place position
+                , out      <- ((      width-1,1), Este)  // The OUTput place position, relative to bounds, and where to continue
+                , mbs      <-  (            1,3)         // The MailBoxeS left corner position and width
+         ))
+}
+
+function lmcPlace_absoluteBASEplace (lmcPlace) { return (displace_From_(bounds(lmcPlace)                                    , contents(lmcPlace))) }
+function lmcPlace_absoluteLMplace   (lmcPlace) { return (displace_From_(displace_From_(lm (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
+function lmcPlace_absolutePCplace   (lmcPlace) { return (displace_From_(displace_From_(pc (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
+function lmcPlace_absoluteACCplace  (lmcPlace) { return (displace_From_(displace_From_(acc(lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
+function lmcPlace_absoluteNEGplace  (lmcPlace) { return (displace_From_(displace_From_(neg(lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
+function lmcPlace_absoluteINPplace  (lmcPlace) { return (displace_From_(displace_From_(fst(inp(lmcPlace)), bounds(lmcPlace)), contents(lmcPlace))) }
+function lmcPlace_absoluteOUTplace  (lmcPlace) { return (displace_From_(displace_From_(fst(out(lmcPlace)), bounds(lmcPlace)), contents(lmcPlace))) }
+function lmcPlace_absoluteMBSplace  (lmcPlace) { return (displace_From_(displace_From_(fst(mbs(lmcPlace)), bounds(lmcPlace)), contents(lmcPlace))) }
+function lmcPlace_absoluteWZplace   (lmcPlace) { return (displace_From_(displace_From_(wz (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
+function lmcPlace_absoluteIZplace   (lmcPlace) { return (displace_From_(displace_From_(iz (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
+function lmcPlace_absoluteDZplace   (lmcPlace) { return (displace_From_(displace_From_(dz (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
+
+function lmcPlace_baseHeight(lmcPlace) {
+  y0     := snd(bounds(lmcPlace))
+  yM     := snd(mbs(lmcPlace))
+  return (yM - y0 - 1)
+}
+
+function lmcPlace_wallsHeight(lmcPlace) {
+  return(2*aux_WallThickness())  // There are 2 walls (top and bottom)
+}
+
+function lmcPlace_wallsWidth(lmcPlace) {
+  return(2*aux_WallThickness())  // There are 2 walls (left and right)
+}
+
+function lmcPlace_IOWidth(lmcPlace) {
+  return(2)                      // INP and OUT are represented in a single line each
+}
+
+function aux_WallThickness() { return (1) } // The number of cells used for a wall
+
+function lmcPlace_setOriginTo_(lmcPlace, coord) {
+  return (LMCForm(lmcPlace | contents <- coord))
+}
+
+function lmcPlace_inpFlow(lmcPlace) { return(opuesto(snd(inp(lmcPlace)))) }
+function lmcPlace_outFlow(lmcPlace) { return(opuesto(snd(out(lmcPlace)))) }

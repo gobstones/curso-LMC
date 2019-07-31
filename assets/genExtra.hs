@@ -1,7 +1,8 @@
 import System.Directory
 
-filesToImport = [ "LMCPrograms"
-                , "LMCBoardRep"   , "LMCModel"
+filesToImport = [ "License"
+                , "LMCPrograms"   , "LMCBoardDraw"      , "LMCFull"
+                , "LMCBoardRep"   , "LMCBoardPlace"     , "LMCModel"
                 , "LMCMem"        , "LMCForm"
                 , "GobstonesLists", "GobstonesAmenities"  
                 ]

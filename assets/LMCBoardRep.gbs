@@ -9,20 +9,12 @@
 // REQUIRES: LMCMem
 // REQUIRES: LMCModel
 
-// program {
-//   lmc := loadInput_On_([10,20,30],
-//          loadProgram_On_([901, 902],
-//          emptyLMCWithMemSize_AndWidth_(20,10)
-//          ))
-//   PonerLMC_WithRep_InPlace_( lmc
-//                            , lmcRepresentation()
-//                            , lmcPlacement())
-// }
 
 //----------------------------------------------------------
 // LMC's Board Representation 
 //----------------------------------------------------------
 //type LMCBoardRep is LMCForm(
+//    /* The lm and bounds have several states... */
 //      lm       -> (Color, Lista de Números)
 //    , pc       -> (Color, Número)
 //    , acc      -> (Color, Número)
@@ -38,25 +30,6 @@
 //}
 
 //----------------------------------------------------------
-// LMC's Board Placement
-//----------------------------------------------------------
-//type Coord is (Número, Número)
-//type LMCBoardPlace is LMCForm(
-//      lm       -> Coord               // Relative to bounds
-//    , pc       -> Coord               // Relative to bounds
-//    , acc      -> Coord               // Relative to bounds
-//    , neg      -> Coord               // Relative to bounds
-//    , inp      -> (Coord, Dirección)  // Base coord, dir of second coord, relative to bounds
-//    , out      -> (Coord, Dirección)  // Base coord, dir of second coord, relative to bounds
-//    , mbs      -> (Coord, Número)     // LowerLeft corner, relative to bounds
-//    , bounds   -> Coord               // LowerLeft corner, absolute
-//    , wz       -> Coord               // Relative to bounds
-//    , iz       -> Coord               // Relative to bounds
-//    , dz       -> Coord               // Relative to bounds
-//    , contents -> Coord               // Current position, relative (ideally, the same of LM)
-//}
-
-//----------------------------------------------------------
 function lmcRepresentation() {
    /* PURPOSE: describes a LMCForm of type LMCBoardRep, with a representation of an LMC
       PRECONDITIONS: none
@@ -68,7 +41,7 @@ function lmcRepresentation() {
                 , inp      <- (Negro,  2)             // The INPut place representation
                 , out      <- (Negro,  3)             // The OUTput place representation
                 , mbs      <- (Negro,  1)             // The MailBoxeS places representation
-                , bounds   <- (Rojo , [1,2,3,4,5,6])  // The BOUNDS are walls representation (Vertical, Horizontal, NO, NE, SO, SE)
+                , bounds   <- (Rojo , [1,2,3,4,5,6])  // The BOUNDS are walls representation (Vertical, Horizontal, NO(N), NE(E), SE(S), SO(O)
                 , wz       <- (Negro, 20)             // The Working Zone place representation
                 , iz       <- (Negro, 21)             // The Instruction Zone place representation
                 , dz       <- (Negro, 22)             // The Data Zone place representation
@@ -76,255 +49,12 @@ function lmcRepresentation() {
          ))
 }
 
-//----------------------------------------------------------
-function lmcPlacementForMemWidth_(memWidth) {
-   /* PURPOSE: describes a LMCForm of type LMCBoardPlace, with the absolute positions of elements in an LMC
-      PRECONDITIONS: none
-      OBSERVATION: the lmc final drawing depends on memory shape. 
-                   Walls surround the memory Mailboxes tightly.
-                   Placement of elements must be according to that, on the base.
-                   (Usually, at the base -- see function baseHeight)
-                        . /==========\.
-                        . |mmmmmmmmmm|.
-                        . |mmmmmmmmmm|.  Memory
-                        . |mmmmmmmmmm|.
-                        . |  l       |.  Base
-                        . i  panwid  o.    (Elements -- at the base)
-                          \==========/
-   */
-  Assert_OrFailWith_(memWidth>=6, "Width too small for this placement -- memWidth must be >=6, for 6 elements")
-  elemsOffset := (memWidth-6) div 2 + 1
-  width := memWidth + 2 // Place for the 2 walls
-  return (LMCForm(lm       <-  (  elemsOffset,2)         // The Little Man place position
-                , pc       <-  (  elemsOffset,1)         // The Program Counter place position
-                , acc      <-  (elemsOffset+1,1)         // The Accumulator place position
-                , neg      <-  (elemsOffset+2,1)         // The NEGative flag place position
-                , inp      <- ((            0,1), Oeste) // The INPut place position, and where to continue
-                , out      <- ((      width-1,1), Este)  // The OUTput place position, and where to continue
-                , mbs      <- ((            1,3), width) // The MailBoxeS left corner position and width
-                , bounds   <-  (            1,0)         // The BOUNDS walls left corner place position (absolute)
-                , wz       <-  (elemsOffset+3,1)         // The Working Zone place position
-                , iz       <-  (elemsOffset+4,1)         // The Instruction Zone place position
-                , dz       <-  (elemsOffset+5,1)         // The Data Zone place position
-                , contents <-  (            0,0)         // The origin
-         ))
+function lmcRep_cornerWall_(lmcRep, direction) {
+  let (color, valores) := bounds(lmcRep)
+  return (color, elemAt_In_(aux_corner2Index(direction), valores))
 }
 
-function absoluteBASEplace (lmcPlace) { return (displace_From_(bounds(lmcPlace)                                    , contents(lmcPlace))) }
-function absoluteLMplace   (lmcPlace) { return (displace_From_(displace_From_(lm (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
-function absolutePCplace   (lmcPlace) { return (displace_From_(displace_From_(pc (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
-function absoluteACCplace  (lmcPlace) { return (displace_From_(displace_From_(acc(lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
-function absoluteNEGplace  (lmcPlace) { return (displace_From_(displace_From_(neg(lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
-function absoluteINPplace  (lmcPlace) { return (displace_From_(displace_From_(fst(inp(lmcPlace)), bounds(lmcPlace)), contents(lmcPlace))) }
-function absoluteOUTplace  (lmcPlace) { return (displace_From_(displace_From_(fst(out(lmcPlace)), bounds(lmcPlace)), contents(lmcPlace))) }
-function absoluteMBSplace  (lmcPlace) { return (displace_From_(displace_From_(fst(mbs(lmcPlace)), bounds(lmcPlace)), contents(lmcPlace))) }
-function absoluteWZplace   (lmcPlace) { return (displace_From_(displace_From_(wz (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
-function absoluteIZplace   (lmcPlace) { return (displace_From_(displace_From_(iz (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
-function absoluteDZplace   (lmcPlace) { return (displace_From_(displace_From_(dz (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
-
-function baseHeightForPlace_(lmcPlace) {
-  y0     := snd(bounds(lmcPlace))
-  posMBS := fst(mbs(lmcPlace))
-  yM     := snd(posMBS)
-  return (yM - y0 - 1)
-}
-
-function lmc_HeightForPlace_(lmc, lmcPlace) {
-  return (lmc_MemHeigth(lmc)+baseHeightForPlace_(lmcPlace)+2) // 2 for the two walls
-}
-
-function lmc_WidthForPlace_(lmc, lmcPlace) {
-  return (lmc_MemWidth(lmc)+2)                                // 2 for the two walls
-}
-
-//----------------------------------------------------------
-// Drawing Operations
-//----------------------------------------------------------
-/*@ATTRIBUTE@block_name@Poner LMC_@*/
-procedure PonerLMC_(lmc) {
-  VaciarTablero()
-  PonerLMC_WithRep_InPlace_(lmc, lmcRepresentation()
-                               , LMCForm(lmcPlacementForMemWidth_(lmc_MemWidth(lmc)) | contents <- coordActual()))
-}
-
-procedure PonerLMC_WithRep_InPlace_(lmc, lmcRep, lmcPlace) {
-  DibujarParedes  (lmc, lmcRep, lmcPlace)
-  DibujarMemoria  (lmc, lmcRep, lmcPlace)
-  DibujarElementos(lmc, lmcRep, lmcPlace)
-  DibujarInput    (lmc, lmcRep, lmcPlace)
-  DibujarOutput   (lmc, lmcRep, lmcPlace)
-  DibujarLittleMan(lmc, lmcRep, lmcPlace)
-}
-
-function lmc_AsBoardWithRep_InPlace_(lmc, lmcRep, lmcPlace) {
-  VaciarTablero()
-  IrAlOrigen()
-  PonerLMC_WithRep_InPlace_(lmc, lmcRep, lmcPlace)
-  let (x,y) := memShapeOf_(bounds(lmc))
-  return (tableroActualDe_x_(x,y))
-}
-
-//----------------------------------------------------------
-// Drawing Main Parts
-//----------------------------------------------------------
-procedure DibujarParedes(lmc, lmcRep, lmcPlace) {
-  /*
-      OBSERVATION: the lmc final drawing depends on memory shape. 
-                   Placement of elements must be according to that.
-  */
-  ancho := lmc_WidthForPlace_ (lmc,lmcPlace)
-  alto  := lmc_HeightForPlace_(lmc,lmcPlace)
-  IrACoord_(absoluteBASEplace(lmcPlace))   // Base position is LowerLeft corner
-  Mover__Veces(Norte,alto-1)               // But, it starts drawing from UpperLeft corner
-  foreach dir in [Norte, Sur] {            // Each time, draw one L of the square
-    DibujarLaEsquina_ParaRep_              (dir                    , lmcRep)
-    DibujarParedRectaDeLongitud_Al_ParaRep_(ancho-2, dir           , lmcRep)
-    DibujarLaEsquina_ParaRep_              (siguiente(dir)         , lmcRep)
-    DibujarParedRectaDeLongitud_Al_ParaRep_(alto -2, siguiente(dir), lmcRep)
-  }
-}
-
-procedure DibujarMemoria(lmc, lmcRep, lmcPlace) {
-  IrACoord_(absoluteMBSplace(lmcPlace))
-  foreach row in mbs(lmc) { 
-    DibujarFilaDeMemoria_ParaRep_(row, lmcRep)
-    Mover(Norte)
-  } 
-}
-
-procedure DibujarElementos(lmc, lmcRep, lmcPlace) {
-  PonerSlot_Towards_At_                  (inp(lmcRep), snd(inp(lmcPlace))           , absoluteINPplace(lmcPlace))
-  PonerElemento_ConContenido_De_En_Desde_(pc (lmcRep), pc(lmc)              , lmcRep, absolutePCplace (lmcPlace) , absoluteINPplace(lmcPlace))
-  PonerElemento_ConContenido_De_En_Desde_(acc(lmcRep), acc(lmc)             , lmcRep, absoluteACCplace(lmcPlace) , absolutePCplace (lmcPlace))
-  PonerElemento_ConContenido_De_En_Desde_(neg(lmcRep), bool2num(neg(lmc))   , lmcRep, absoluteNEGplace(lmcPlace) , absoluteACCplace(lmcPlace))
-  PonerElemento_ConContenido_De_En_Desde_(wz (lmcRep), numFromMaybe(wz(lmc)), lmcRep, absoluteWZplace (lmcPlace) , absoluteNEGplace(lmcPlace))
-  PonerElemento_ConContenido_De_En_Desde_(iz (lmcRep), numFromMaybe(iz(lmc)), lmcRep, absoluteIZplace (lmcPlace) , absoluteWZplace (lmcPlace))
-  PonerElemento_ConContenido_De_En_Desde_(dz (lmcRep), numFromMaybe(dz(lmc)), lmcRep, absoluteDZplace (lmcPlace) , absoluteIZplace (lmcPlace))
-  PonerSlot_Towards_At_                  (out(lmcRep), snd(out(lmcPlace))           , absoluteOUTplace(lmcPlace))
-}
-
-procedure DibujarInput(lmc, lmcRep, lmcPlace) {
-  IrACoord_(absoluteINPplace(lmcPlace))
-  Poner_ElementosDeLaLista_ParaRep_ConElPrimeroHacia_(lmc_HeightForPlace_(lmc,lmcPlace), inp(lmc)
-                                                     ,lmcRep, opuesto(snd(inp(lmcPlace))))
-}
-
-procedure DibujarOutput(lmc, lmcRep, lmcPlace) {
-  IrACoord_(absoluteOUTplace(lmcPlace))
-  Poner_ElementosDeLaLista_ParaRep_ConElPrimeroHacia_(lmc_HeightForPlace_(lmc,lmcPlace), out(lmc)
-                                                     ,lmcRep, opuesto(snd(out(lmcPlace))))
-}
-
-procedure DibujarLittleMan(lmc, lmcRep, lmcPlace) {
-  IrACoord_(absoluteLMplace(lmcPlace))
-  PonerElemento_(choose halted_(lm(lmcRep)) when (lmc_IsHalted(lmc))
-                        active_(lm(lmcRep)) otherwise)
-}
-
-//----------------------------------------------------------
-// Operations to access the representation
-//----------------------------------------------------------
-procedure DibujarLaEsquina_ParaRep_(dir, lmcRep) {
-  PonerElemento_(cornerWall_(bounds(lmcRep), dir))
-  Mover(siguiente(dir))
-}
-
-procedure DibujarParedRectaDeLongitud_Al_ParaRep_(long, dir, lmcRep) {
-  wallRep := straigthWall_(bounds(lmcRep), isHorizontal_(dir))
-  repeat (long) {
-    PonerElemento_(wallRep)
-    Mover(siguiente(dir)) 
-  } 
-}
-
-procedure DibujarFilaDeMemoria_ParaRep_(row, lmcRep) {
-    foreach mb in row {
-      PonerElemento_(mbs(lmcRep))  PonerContenido_(mb, lmcRep)
-      Mover(Este)
-    }
-    foreach mb in row { Mover (Oeste) }  // Return the header to the starting cell
-}
-
-procedure PonerSlot_Towards_At_(elem, dir, coord) {
-  IrACoord_(coord)
-  Mover(dir)          PonerElemento_(elem)
-  Mover(opuesto(dir)) PonerElemento_(elem)
-}
-
-procedure PonerElemento_ConContenido_De_En_Desde_(element, content, lmcRep, destino, origen) {
-  IrACoord_Desde_(destino, origen)
-  PonerElemento_(element)
-  PonerContenido_(content, lmcRep)
-}
-
-procedure Poner_ElementosDeLaLista_ParaRep_ConElPrimeroHacia_(alto, lista, lmcRep, dir) {
-  elementosQueFaltan  := take_ElemsFrom_(min(alto, length(lista)), lista)
-  if (not esVacía(elementosQueFaltan)) {
-    // The first element, on the slot
-    PonerContenido_(primero(elementosQueFaltan), lmcRep)
-    Mover(opuesto(dir))
-    PonerLaLista_ParaRep_(sinElPrimero(elementosQueFaltan), lmcRep)
-  }
-}
-
-procedure PonerLaLista_ParaRep_(lista, lmcRep) {
-  if (not esVacía(lista)) {
-    // The border case
-    PonerContenido_(primero(lista), lmcRep)
-    // The remaining elements
-    elementosQueFaltan := sinElPrimero(lista)
-    while (not esVacía(elementosQueFaltan)) {
-      Mover(Norte)
-      PonerContenido_(primero(elementosQueFaltan), lmcRep)
-      elementosQueFaltan := sinElPrimero(elementosQueFaltan)
-    }
-  }
-}
-
-procedure PonerContenido_(content, lmcRep) {
-   PonerElemento_((colorDe_(contents(lmcRep))
-                 , content
-                 ))  
-}
-
-procedure PonerElemento_(elemRep) {
-  let (color, value) := elemRep
-  Poner__Veces(color, value)
-}
-
-function colorDe_(elemRep) {
-  let (color, valor) := elemRep
-  return (color)
-}
-
-function cantidadDe_(elemRep) {
-  let (color, valor) := elemRep
-  return (valor)
-}
-
-function halted_(lmRep) {
-  let (color, valor) := lmRep
-  return (color, primero(valor))
-}
-
-function active_(lmRep) {
-  let (color, valor) := lmRep
-  return (color, segundo(valor))
-}
-
-function straigthWall_(boundsRep, esVertical) {
-  let (color, valor) := boundsRep
-  return (color, choose primero(valor) when (esVertical) segundo(valor) otherwise)
-}
-
-function isHorizontal_(dir) { return (dir==Norte || dir==Sur) }
-
-function cornerWall_(boundsRep, direction) {
-  let (color, valor) := boundsRep
-  return (color, elemAt_In_(corner2Index(direction), valor))
-}
-
-function corner2Index(dir) {
+function aux_corner2Index(dir) {
    return (matching (dir) select
              2 on Norte
              3 on Este
@@ -333,55 +63,37 @@ function corner2Index(dir) {
           )
 }
 
-
-
-//----------------------------------------------------------
-// Operaciones auxiliares para lectura de LMC
-//----------------------------------------------------------
-function widthOfLMCMem() {
-   IrAlOrigen()
-   Mover(Este)
-   widthSoFar := 0
-   while (hayBolitas(Rojo) && puedeMover(Este)) {
-      widthSoFar := widthSoFar + 1
-      Mover(Este)
-   }
-   Assert_OrFailWith_(not hayBolitas(Rojo), "There is no LM room represented in the board -- no room for output")
-   Assert_OrFailWith_(widthSoFar == 12, "There is no LM room represented in the board -- wrong width")
-   return(widthSoFar - 2)
+function lmcRep_straigthWallInDir_(lmcRep, dir) {
+  let (color, valores) := bounds(lmcRep)
+  return (color, choose segundo(valores) when (aux_isHorizontal_(dir)) 
+                        primero(valores) otherwise)
 }
 
-function depthOfLMCMem() {
-   IrAlOrigen()
-   Mover(Este)
-   depthSoFar := 0
-   while (hayBolitas(Rojo) && puedeMover(Norte)) {
-      depthSoFar := depthSoFar + 1
-      Mover(Norte)
-   }
-   if (hayBolitas(Rojo)) { depthSoFar := depthSoFar + 1 }
-   Assert_OrFailWith_(depthSoFar > 4, "There is no LM room represented in the board -- wrong depth")
-   return(depthSoFar - 4)
+function aux_isHorizontal_(dir) { return (dir==Norte || dir==Sur) }
+
+function lmcRep_contents_(lmcRep, value) { return(aux_modifyValueOf_With_(contents(lmcRep), value)) }
+
+function aux_modifyValueOf_With_(elemRep, value) {
+  return((fst(elemRep), value))
 }
 
-function sizeOfLMCMem() {
-   IrAlOrigen()
-   Mover__Veces(Este, 2)
-   Mover__Veces(Norte, 3)
-   sizeSoFar := 0
-   while (hayBolitas(Negro)) {
-      sizeSoFar := sizeSoFar + 1
-      PasarAlSiguienteMB()
-   }
-   Assert_OrFailWith_(sizeSoFar > 1, "There is no LM room represented in the board -- wrong memory size")
-   return(sizeSoFar )
+function aux_colorOf_(elemRep) {
+  let (color, value) := elemRep
+  return (color)
 }
 
-procedure PasarAlSiguienteMB() {
-  Mover(Este)  
-  if (hayBolitas(Rojo))
-    { IrAlBorde(Oeste)
-      Mover__Veces(Este, 2)
-      Mover(Norte)
-    }
+function aux_cantOf_(elemRep) {
+  let (color, value) := elemRep
+  return (value)
 }
+
+function lmcRep_haltedLM(lmRep) {
+  let (color, valores) := lmRep
+  return (color, primero(valores))
+}
+
+function lmcRep_activeLM(lmRep) {
+  let (color, valores) := lmRep
+  return (color, segundo(valores))
+}
+

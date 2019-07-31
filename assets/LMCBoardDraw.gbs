@@ -1,0 +1,173 @@
+//===============================================================
+//===============================================================
+//==== LMC Board Drawing
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+// REQUIRES: LMCForm
+// REQUIRES: LMCMem
+// REQUIRES: LMCModel
+// REQUIRES: LMCBoardRep
+// REQUIRES: LMCBoardPlace
+// REQUIRES: LMCFull
+
+//----------------------------------------------------------
+// Drawing Operations
+//----------------------------------------------------------
+/*@ATTRIBUTE@block_name@Poner LMC_@*/
+procedure PonerLMCWithModel_(lmcModel) {
+  VaciarTablero()
+  PonerLMC_AtCoordActual(LMC(model          <- lmcModel
+                            ,representation <- lmcRepresentation()
+                            ,placing        <- lmcPlacementForMemWidth_(lmcModel_memWidth(lmcModel))
+                            ))
+}
+
+procedure PonerLMC_AtCoordActual(givenLMC) {
+  lmc := lmc_setOriginTo_(givenLMC, coordActual())
+  LMC_DibujarParedes       (lmc)
+  LMC_DibujarMemoria       (lmc)
+  LMC_DibujarElementos     (lmc)
+  LMC_DibujarInputContents (lmc)
+  LMC_DibujarOutputContents(lmc)
+  LMC_DibujarLittleMan     (lmc)
+}
+
+function lmc_AsBoard(lmc) {
+  VaciarTablero()
+  IrAlOrigen()
+  PonerLMC_AtCoordActual(lmc)
+  return (tableroActualDe_x_(lmc_totalWidth(lmc)
+                            ,lmc_totalHeight(lmc)
+                            ))
+}
+
+//----------------------------------------------------------
+// Drawing Main Parts
+//----------------------------------------------------------
+procedure LMC_DibujarParedes(lmc) {
+  ancho := lmc_roomWidth(lmc)
+  alto  := lmc_roomHeight(lmc)
+  IrACoord_(lmc_absoluteBASEplace(lmc)) // Base position is LowerLeft corner
+  Mover__Veces(Norte,alto-1)            // But, it starts drawing from UpperLeft corner
+  foreach dir in [Norte, Sur] {         // Each time, draw one L of the square
+    LMC_DibujarLado_DeLongitud_(lmc, dir           , ancho-1)
+    LMC_DibujarLado_DeLongitud_(lmc, siguiente(dir), ancho-1)
+  }
+}
+
+procedure LMC_DibujarMemoria(lmc) {
+  IrACoord_(lmc_absoluteMBSplace(lmc))
+  foreach row in lmc_memContents(lmc) { 
+    LMC_DibujarFilaDeMemoria_(lmc, row)
+    Mover(Norte)
+  } 
+}
+
+procedure LMC_DibujarElementos(lmc) {
+  LMC_PonerSlot_Towards_At_               (lmc, lmc_inpRep(lmc), lmc_inputFlow(lmc)       , lmc_absoluteINPplace(lmc))
+  LMC_PonerElemento_ConContenido_En_Desde_(lmc, lmc_pcRep (lmc), lmc_pc(lmc)              , lmc_absolutePCplace (lmc), lmc_absoluteINPplace(lmc))
+  LMC_PonerElemento_ConContenido_En_Desde_(lmc, lmc_accRep(lmc), lmc_acc(lmc)             , lmc_absoluteACCplace(lmc), lmc_absolutePCplace (lmc))
+  LMC_PonerElemento_ConContenido_En_Desde_(lmc, lmc_negRep(lmc), bool2num(lmc_neg(lmc))   , lmc_absoluteNEGplace(lmc), lmc_absoluteACCplace(lmc))
+  LMC_PonerElemento_ConContenido_En_Desde_(lmc, lmc_wzRep (lmc), numFromMaybe(lmc_wz(lmc)), lmc_absoluteWZplace (lmc), lmc_absoluteNEGplace(lmc))
+  LMC_PonerElemento_ConContenido_En_Desde_(lmc, lmc_izRep (lmc), numFromMaybe(lmc_iz(lmc)), lmc_absoluteIZplace (lmc), lmc_absoluteWZplace (lmc))
+  LMC_PonerElemento_ConContenido_En_Desde_(lmc, lmc_dzRep (lmc), numFromMaybe(lmc_dz(lmc)), lmc_absoluteDZplace (lmc), lmc_absoluteIZplace (lmc))
+  LMC_PonerSlot_Towards_At_               (lmc, lmc_outRep(lmc), lmc_outputFlow(lmc)      , lmc_absoluteOUTplace(lmc))
+}
+
+procedure LMC_DibujarInputContents(lmc) {
+  IrACoord_(lmc_absoluteINPplace(lmc))
+  LMC_Poner_ElementosDeLaLista_ConElPrimeroHacia_(lmc, lmc_totalHeight(lmc)
+                                                     , lmc_inpContents(lmc)
+                                                     , opuesto(lmc_inputFlow(lmc)))
+}
+
+procedure LMC_DibujarOutputContents(lmc) {
+  IrACoord_(lmc_absoluteOUTplace(lmc))
+  LMC_Poner_ElementosDeLaLista_ConElPrimeroHacia_(lmc, lmc_totalHeight(lmc)
+                                                     , lmc_outContents(lmc)
+                                                     , opuesto(lmc_outputFlow(lmc)))
+}
+
+procedure LMC_DibujarLittleMan(lmc) {
+  IrACoord_(lmc_absoluteLMplace(lmc))
+  LMC_PonerElemento_(lmc, lmc_lmRep(lmc))
+}
+
+//----------------------------------------------------------
+// Operations to draw parts of the representation
+//----------------------------------------------------------
+procedure LMC_DibujarLado_DeLongitud_(lmc, dir, long) {
+  LMC_DibujarLaEsquina_(lmc, dir)
+  LMC_DibujarParedRectaDeLongitud_Al_(lmc, long-1, dir)
+}
+
+procedure LMC_DibujarLaEsquina_(lmc, dir) {
+  LMC_PonerElemento_(lmc, lmc_corner_WallRep(lmc, dir))
+  Mover(siguiente(dir))
+}
+
+procedure LMC_DibujarParedRectaDeLongitud_Al_(lmc, long, dir) {
+  wallRep := lmc_straigthWallRepInDir_(lmc, dir) // Stored for efficiency during the repetition
+  repeat (long) {
+    LMC_PonerElemento_(lmc, wallRep)
+    Mover(siguiente(dir)) 
+  } 
+}
+
+procedure LMC_DibujarFilaDeMemoria_(lmc, row) {
+    foreach mb in row {
+      LMC_PonerElemento_ (lmc, lmc_mbsRep(lmc))  
+      LMC_PonerContenido_(lmc, mb)
+      Mover(Este)
+    }
+    foreach mb in row { Mover (Oeste) }  // Return the header to the starting cell
+}
+
+procedure LMC_PonerSlot_Towards_At_(lmc, elem, dir, coord) {
+  /* OBSERVATION: lmc is given only to have a uniform interface */
+  IrACoord_(coord)
+  Mover(dir)          LMC_PonerElemento_(lmc, elem)
+  Mover(opuesto(dir)) LMC_PonerElemento_(lmc, elem)
+}
+
+procedure LMC_PonerElemento_ConContenido_En_Desde_(lmc, element, content, destino, origen) {
+  IrACoord_Desde_(destino, origen)
+  LMC_PonerElemento_(lmc, element)
+  LMC_PonerContenido_(lmc, content)
+}
+
+procedure LMC_Poner_ElementosDeLaLista_ConElPrimeroHacia_(lmc, cant, list, dir) {
+  elementosQueFaltan  := take_ElemsFrom_(min(cant, length(list)), list)
+  if (not esVacía(elementosQueFaltan)) {
+    // The first element, on the slot
+    LMC_PonerContenido_(lmc, primero(elementosQueFaltan))
+    Mover(opuesto(dir))
+    LMC_PonerLaLista_(lmc, sinElPrimero(elementosQueFaltan))
+  }
+}
+
+procedure LMC_PonerLaLista_(lmc, lista) {
+  if (not esVacía(lista)) {
+    // The border case
+    LMC_PonerContenido_(lmc, primero(lista))
+    // The remaining elements
+    elementosQueFaltan := sinElPrimero(lista)
+    while (not esVacía(elementosQueFaltan)) {
+      Mover(Norte)
+      LMC_PonerContenido_(lmc, primero(elementosQueFaltan))
+      elementosQueFaltan := sinElPrimero(elementosQueFaltan)
+    }
+  }
+}
+
+procedure LMC_PonerContenido_(lmc, content) {
+   LMC_PonerElemento_(lmc, lmc_contents_Rep(lmc, content))  
+}
+
+procedure LMC_PonerElemento_(lmc, elemRep) {
+  /* OBSERVATION: lmc is given only to have a uniform interface */
+  let (color, value) := elemRep
+  Poner__Veces(color, value)
+}

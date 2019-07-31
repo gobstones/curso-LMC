@@ -1,0 +1,141 @@
+//===============================================================
+//===============================================================
+//==== LMC definition with all the information needed
+//====     A LMC is composed by a model, a way to represent each of its elements, and the placing of elements in a board
+//====       The model and its operations are defined in LMCModel
+//====       The operations to obtain information about representation and placing are defined in LMCBoardRep
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+// REQUIRES: LMCForm
+// REQUIRES: LMCMem
+// REQUIRES: LMCModel
+// REQUIRES: LMCBoardRep
+// REQUIRES: LMCBoardPlace
+
+type LMC is record {
+  /* PURPOSE: Models an LMC with information about its state, 
+              its representation and the placing of elements on board
+  */
+  field model            // LMCModel, the actual data of the LMC
+  field representation   // LMCBoardRep, the way each element is represented in the board
+  field placing          // LMCBoardPlace, here to put each element in the board
+}
+
+//-------------------------------
+// LMC external operations
+//    function emptyLMCWithMemSize_AndMemWidth_(memSize, memWidth)
+//      /* PRECONDITIONS:memSize (the number of MailBoxeS) is <= 100 */
+//
+//    function lmc_memContents(lmc)
+//    function lmc_memSize(lmc)
+//    function lmc_totalHeight(lmc)
+//    function lmc_totalWidth(lmc)
+//    function lmc_roomHeight(lmc)
+//    function lmc_roomWidth(lmc)
+//
+//    function loadInput_OnLMC_(input, lmc)
+//    function loadProgram_OnLMC_(prog, lmc)
+//    function lmc_executeProgram(lmc)
+//    function lmc_debugProgram_Steps(lmc, cant)
+//    function lmc_executeProgram_Steps(lmc, cant)
+//    function lmc_executeProgrammOneStep(lmc)
+//    function lmc_inspectDebugAtStep_(lmc, step)
+//
+//   function lmc_setOriginTo_(lmcPlace, coord)
+//
+//   function lmc_absoluteBASEplace(lmcPlace)
+//   function lmc_absoluteLMplace  (lmcPlace)
+//   function lmc_absolutePCplace  (lmcPlace)
+//   function lmc_absoluteACCplace (lmcPlace)
+//   function lmc_absoluteNEGplace (lmcPlace)
+//   function lmc_absoluteINPplace (lmcPlace)
+//   function lmc_absoluteOUTplace (lmcPlace)
+//   function lmc_absoluteMBSplace (lmcPlace)
+//   function lmc_absoluteWZplace  (lmcPlace)
+//   function lmc_absoluteIZplace  (lmcPlace)
+//   function lmc_absoluteDZplace  (lmcPlace)
+//-------------------------------
+function emptyLMCWithMemSize_AndMemWidth_(memSize, memWidth) {
+  return(LMC(model          <- emptyLMCModelWithMemSize_AndMemWidth_(memSize, memWidth)
+            ,representation <- lmcRepresentation()
+            ,placing        <- lmcPlacementForMemWidth_(memWidth) 
+        ))
+}
+
+
+function lmc_memContents(lmc) { return(mbs(model(lmc))) }
+function lmc_inpContents(lmc) { return(inp(model(lmc))) }
+function lmc_outContents(lmc) { return(out(model(lmc))) }
+function lmc_pc (lmc)         { return(pc (model(lmc))) }
+function lmc_acc(lmc)         { return(acc(model(lmc))) }
+function lmc_neg(lmc)         { return(neg(model(lmc))) }
+function lmc_wz (lmc)         { return(wz (model(lmc))) }
+function lmc_iz (lmc)         { return(iz (model(lmc))) }
+function lmc_dz (lmc)         { return(dz (model(lmc))) }
+
+function lmc_memSize(lmc)     { return(lmcModel_memSize(model(lmc)))                               }
+function lmc_totalHeight(lmc) { return(lmc_roomHeight(lmc)) /* The room occupies all the height */ }
+function lmc_totalWidth(lmc)  { // The total width occupied by the LMC
+  return (lmcModel_memWidth(model(lmc))
+         +lmcPlace_wallsWidth(placing(lmc))
+         +lmcPlace_IOWidth(placing(lmc)))
+}
+
+function lmc_roomHeight(lmc)  {
+  return (lmcModel_memHeigth(model(lmc))        // Memory height
+         +lmcPlace_baseHeight(placing(lmc))     // Base height
+         +lmcPlace_wallsHeight(placing(lmc)))   // Walls
+}
+
+function lmc_roomWidth(lmc)   { // The width of the room
+  return (lmcModel_memWidth(model(lmc))
+         +lmcPlace_wallsWidth(placing(lmc)))
+}
+
+function loadInput_OnLMC_(input, lmc)        { return (LMC (lmc | model <- lmcModel_loadInput_           (model(lmc), input))) }
+function loadProgram_OnLMC_(prog, lmc)       { return (LMC (lmc | model <- lmcModel_loadProgram_         (model(lmc), prog)))  }
+function lmc_executeProgram(lmc)             { return (LMC (lmc | model <- lmcModel_executeProgram       (model(lmc))))        }
+function lmc_debugProgram_Steps(lmc, cant)   { return (LMC (lmc | model <- lmcModel_debugProgram_Steps   (model(lmc), cant)))  }
+function lmc_executeProgram_Steps(lmc, cant) { return (LMC (lmc | model <- lmcModel_executeProgram_Steps (model(lmc), cant)))  }
+function lmc_executeProgramOneStep(lmc)      { return (LMC (lmc | model <- lmcModel_executeProgramOneStep(model(lmc))))        }
+function lmc_inspectDebugAtStep_(lmc, step)  { return (LMC (lmc | model <- lmcModel_inspectDebugAtStep_  (model(lmc), step)))  }
+
+function lmc_isHalted(lmc) { return(lmcModel_isHalted(model(lmc))) }
+
+function lmc_setOriginTo_(lmc, coord) { return(LMC(lmc | placing <- lmcPlace_setOriginTo_(placing(lmc), coord))) }
+
+function lmc_absoluteBASEplace(lmc) { return(lmcPlace_absoluteBASEplace(placing(lmc))) }
+function lmc_absoluteLMplace  (lmc) { return(lmcPlace_absoluteLMplace  (placing(lmc))) }
+function lmc_absolutePCplace  (lmc) { return(lmcPlace_absolutePCplace  (placing(lmc))) }
+function lmc_absoluteACCplace (lmc) { return(lmcPlace_absoluteACCplace (placing(lmc))) }
+function lmc_absoluteNEGplace (lmc) { return(lmcPlace_absoluteNEGplace (placing(lmc))) }
+function lmc_absoluteINPplace (lmc) { return(lmcPlace_absoluteINPplace (placing(lmc))) }
+function lmc_absoluteOUTplace (lmc) { return(lmcPlace_absoluteOUTplace (placing(lmc))) }
+function lmc_absoluteMBSplace (lmc) { return(lmcPlace_absoluteMBSplace (placing(lmc))) }
+function lmc_absoluteWZplace  (lmc) { return(lmcPlace_absoluteWZplace  (placing(lmc))) }
+function lmc_absoluteIZplace  (lmc) { return(lmcPlace_absoluteIZplace  (placing(lmc))) }
+function lmc_absoluteDZplace  (lmc) { return(lmcPlace_absoluteDZplace  (placing(lmc))) }
+
+function lmc_corner_WallRep       (lmc, dir) { return(lmcRep_cornerWall_       (representation(lmc), dir)) }
+function lmc_straigthWallRepInDir_(lmc, dir) { return(lmcRep_straigthWallInDir_(representation(lmc), dir)) }
+function lmc_contents_Rep         (lmc, val) { return(lmcRep_contents_         (representation(lmc), val)) }
+
+function lmc_pcRep (lmc) { return(pc (representation(lmc))) }
+function lmc_accRep(lmc) { return(acc(representation(lmc))) }
+function lmc_negRep(lmc) { return(neg(representation(lmc))) }
+function lmc_inpRep(lmc) { return(inp(representation(lmc))) }
+function lmc_outRep(lmc) { return(out(representation(lmc))) }
+function lmc_mbsRep(lmc) { return(mbs(representation(lmc))) }
+function lmc_wzRep (lmc) { return(wz (representation(lmc))) }
+function lmc_izRep (lmc) { return(iz (representation(lmc))) }
+function lmc_dzRep (lmc) { return(dz (representation(lmc))) }
+
+function lmc_lmRep(lmc) { 
+  return(choose lmcRep_haltedLM(lmcRep) when (lmc_isHalted(lmc))
+                lmcRep_activeLM(lmcRep) otherwise)
+}
+
+function lmc_inputFlow (lmc) { return(lmcPlace_inpFlow(placing(lmc))) }
+function lmc_outputFlow(lmc) { return(lmcPlace_outFlow(placing(lmc))) }
