@@ -8,11 +8,11 @@
 //===============================================================
 // REQUIRES: GobstonesAmenities
 // REQUIRES: GobstonesLists
-// REQUIRES: LMCForm
-// REQUIRES: LMCMem
-// REQUIRES: LMCModel
-// REQUIRES: LMCBoardRep
-// REQUIRES: LMCBoardPlace
+// REQUIRES: LMCDef-Form
+// REQUIRES: LMCDef-FM-Mem
+// REQUIRES: LMCDef-F-Model
+// REQUIRES: LMCDef-F-BoardRep
+// REQUIRES: LMCDef-F-BoardPlace
 
 type LMC is record {
   /* PURPOSE: Models an LMC with information about its state, 

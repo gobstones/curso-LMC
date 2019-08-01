@@ -1,10 +1,10 @@
 import System.Directory
 
-filesToImport = [ "License"
-                , "LMCPrograms"   , "LMCBoardDraw"      , "LMCFull"
-                , "LMCBoardRep"   , "LMCBoardPlace"     , "LMCModel"
-                , "LMCMem"        , "LMCForm"
-                , "GobstonesLists", "GobstonesAmenities"  
+filesToImport = [ "License"          , "LMCOps-BoardDraw"
+                , "LMCDef-Programs"  , "LMCDef-F-Model"     , "LMCDef-FM-Mem"    
+                , "LMCDef-Full"      , "LMCDef-F-BoardPlace"
+                , "LMCDef-Form"      , "LMCDef-F-BoardRep"
+                , "GobstonesLists"   , "GobstonesAmenities"  
                 ]
 
 main = 

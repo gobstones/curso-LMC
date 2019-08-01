@@ -3,17 +3,6 @@
 //==== LMC Programs
 //===============================================================
 //===============================================================
-// REQUIRES: LMCModel
-
-/* program {
-    lmc := loadInput_OnLMC_([10,20,30],
-           loadProgram_OnLMC_(accumulatesInpToOut(),
-           emptyLMCWithMemSize_AndMemWidth_(20, 10)
-           ))
-    
-    return (lmcModel_executeProgram(lmc))
-}
- */
 
 //-------------------------------
 // LMC programs

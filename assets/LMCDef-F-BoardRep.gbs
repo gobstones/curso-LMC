@@ -5,13 +5,19 @@
 //===============================================================
 // REQUIRES: GobstonesAmenities
 // REQUIRES: GobstonesLists
-// REQUIRES: LMCForm
-// REQUIRES: LMCMem
-// REQUIRES: LMCModel
+// REQUIRES: LMCDef-Form
+// REQUIRES: LMCDef-FM-Mem
+// REQUIRES: LMCDef-F-Model
 
 
 //----------------------------------------------------------
 // LMC's Board Representation 
+//   function lmcRepresentation()
+//   function lmcRep_cornerWall_(lmcRep, direction)
+//   function lmcRep_straigthWallInDir_(lmcRep, dir)
+//   function lmcRep_contents_(lmcRep, value)
+//   function lmcRep_haltedLM(lmRep)
+//   function lmcRep_activeLM(lmRep)
 //----------------------------------------------------------
 //type LMCBoardRep is LMCForm(
 //    /* The lm and bounds have several states... */

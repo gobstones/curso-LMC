@@ -1,8 +1,16 @@
+//===============================================================
+//===============================================================
+//==== LMC Board Animated Execution
+//===============================================================
+//===============================================================
 // REQUIRES: GobstonesAmenities
-// REQUIRES: LMCForm
-// REQUIRES: LMCMem
-// REQUIRES: LMCModel
-// REQUIRES: LMCBoardRep
+// REQUIRES: GobstonesLists
+// REQUIRES: LMCDef-Form
+// REQUIRES: LMCDef-FM-Mem
+// REQUIRES: LMCDef-F-Model
+// REQUIRES: LMCDef-F-BoardRep
+// REQUIRES: LMCDef-F-BoardPlace
+// REQUIRES: LMCDef-Full
 
 
 //----------------------------------------------------------

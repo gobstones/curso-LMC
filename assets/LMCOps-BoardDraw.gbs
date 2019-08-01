@@ -6,19 +6,19 @@
 /*
 // REQUIRES: GobstonesAmenities
 // REQUIRES: GobstonesLists
-// REQUIRES: LMCForm
-// REQUIRES: LMCMem
-// REQUIRES: LMCModel
-// REQUIRES: LMCBoardRep
-// REQUIRES: LMCBoardPlace
-// REQUIRES: LMCFull
+// REQUIRES: LMCDef-Form
+// REQUIRES: LMCDef-FM-Mem
+// REQUIRES: LMCDef-F-Model
+// REQUIRES: LMCDef-F-BoardRep
+// REQUIRES: LMCDef-F-BoardPlace
+// REQUIRES: LMCDef-Full
 */
   
 //----------------------------------------------------------
 // Drawing Operations
 //   procedure PonerEmptyLMCWithModel_(lmcModel)
 //   procedure PonerLMC_(lmc)
-//   function lmc_AsBoard(lmc)
+//   function  lmc_AsBoard(lmc)
 //----------------------------------------------------------
 /*@ATTRIBUTE@block_name@Poner LMC vacia con memSize _ y memWidth _@*/
 procedure PonerEmptyLMCWithMemSize_AndMemWidth_(memSize, memWidth) {

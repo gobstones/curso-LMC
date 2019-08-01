@@ -5,9 +5,9 @@
 //===============================================================
 // REQUIRES: GobstonesAmenities
 // REQUIRES: GobstonesLists
-// REQUIRES: LMCForm
-// REQUIRES: LMCMem
-// REQUIRES: LMCModel
+// REQUIRES: LMCDef-Form
+// REQUIRES: LMCDef-FM-Mem
+// REQUIRES: LMCDef-F-Model
 
 
 //----------------------------------------------------------
