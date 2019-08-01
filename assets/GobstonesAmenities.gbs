@@ -54,6 +54,7 @@ procedure Sacar__Veces(color,     cantidad) { repeat (cantidad) { Sacar(color)  
 /*@ATTRIBUTE@atomic@*/
 procedure Mover__Veces(dirección, cantidad) { repeat (cantidad) { Mover(dirección) } }
 
+/*@ATTRIBUTE@atomic@*/
 procedure MoverHacia__Veces(dirección, cantidad) {
   if (cantidad >= 0) 
        { Mover__Veces(dirección         , cantidad)          }
@@ -63,7 +64,9 @@ procedure MoverHacia__Veces(dirección, cantidad) {
 //-------------------------------
 // Gobstones positioning
 //-------------------------------
+/*@ATTRIBUTE@atomic@*/
 procedure IrAlOrigen() { IrAlBorde(Sur) IrAlBorde(Oeste) }
+/*@ATTRIBUTE@atomic@*/
 procedure PasarASiguienteCelda() {
     if (puedeMover(Este)) { Mover(Este) }
     else { IrAlBorde(Oeste) Mover(Norte) }
@@ -73,6 +76,7 @@ function coordActual() {
   return(distanciaAlBorde_(Oeste), distanciaAlBorde_(Sur))
 }
 
+/*@ATTRIBUTE@atomic@*/
 procedure IrACoord_(coord) {
   let (x,y) := coord
   IrAlOrigen()
@@ -80,6 +84,7 @@ procedure IrACoord_(coord) {
   Mover__Veces(Norte, y)
 }
 
+/*@ATTRIBUTE@atomic@*/
 procedure IrACoord_Desde_(coordDestino, coordActual) {
   let (x0,y0) := coordActual
   let (x1,y1) := coordDestino
@@ -95,7 +100,10 @@ function displace_From_(offset, baseCoord) {
 
 function distanciaAlBorde_(dir) {
   pasosDados := 0
-  while (puedeMover(dir)) { pasosDados := pasosDados + 1 }
+  while (puedeMover(dir)) { 
+    pasosDados := pasosDados + 1
+    Mover(dir)
+  }
   return (pasosDados)
 }
 
@@ -148,6 +156,7 @@ function celdaActual() {
          , nroBolitas(Rojo), nroBolitas(Verde))
 }
 
+/*@ATTRIBUTE@atomic@*/
 procedure PonerCelda_(celda) {
     let (azul, negro, rojo, verde) := celda
     Poner__Veces(Azul , azul )

@@ -3,6 +3,7 @@
 //==== LMC Board Drawing
 //===============================================================
 //===============================================================
+/*
 // REQUIRES: GobstonesAmenities
 // REQUIRES: GobstonesLists
 // REQUIRES: LMCForm
@@ -11,33 +12,38 @@
 // REQUIRES: LMCBoardRep
 // REQUIRES: LMCBoardPlace
 // REQUIRES: LMCFull
-
+*/
+  
 //----------------------------------------------------------
 // Drawing Operations
+//   procedure PonerEmptyLMCWithModel_(lmcModel)
+//   procedure PonerLMC_(lmc)
+//   function lmc_AsBoard(lmc)
 //----------------------------------------------------------
-/*@ATTRIBUTE@block_name@Poner LMC_@*/
-procedure PonerLMCWithModel_(lmcModel) {
+/*@ATTRIBUTE@block_name@Poner LMC with model_@*/
+procedure PonerEmptyLMCWithMemSize_AndMemWidth_(memSize, memWidth) {
   VaciarTablero()
-  PonerLMC_AtCoordActual(LMC(model          <- lmcModel
-                            ,representation <- lmcRepresentation()
-                            ,placing        <- lmcPlacementForMemWidth_(lmcModel_memWidth(lmcModel))
-                            ))
+  PonerLMC_(emptyLMCWithMemSize_AndMemWidth_(memSize, memWidth))
 }
 
-procedure PonerLMC_AtCoordActual(givenLMC) {
-  lmc := lmc_setOriginTo_(givenLMC, coordActual())
-  LMC_DibujarParedes       (lmc)
-  LMC_DibujarMemoria       (lmc)
-  LMC_DibujarElementos     (lmc)
-  LMC_DibujarInputContents (lmc)
-  LMC_DibujarOutputContents(lmc)
-  LMC_DibujarLittleMan     (lmc)
+procedure PonerLMC_(lmc) {
+  Assert_OrFailWith_(lmc_totalHeight(lmc)<=distanciaAlBorde_(Norte)+1
+                    ,"Not enough vertical room for LMC -- increase the distance to the North border")
+  Assert_OrFailWith_(lmc_totalWidth(lmc)<=distanciaAlBorde_(Este)+1
+                    ,"Not enough horizontal room for LMC -- increase the distance to the East border")
+  lmc' := lmc_setOriginTo_(lmc, coordActual())
+  LMC_DibujarParedes       (lmc')
+  LMC_DibujarMemoria       (lmc')
+  LMC_DibujarElementos     (lmc')
+  LMC_DibujarInputContents (lmc')
+  LMC_DibujarOutputContents(lmc')
+  LMC_DibujarLittleMan     (lmc')
 }
 
 function lmc_AsBoard(lmc) {
   VaciarTablero()
   IrAlOrigen()
-  PonerLMC_AtCoordActual(lmc)
+  PonerLMC_(lmc)
   return (tableroActualDe_x_(lmc_totalWidth(lmc)
                             ,lmc_totalHeight(lmc)
                             ))
@@ -53,7 +59,7 @@ procedure LMC_DibujarParedes(lmc) {
   Mover__Veces(Norte,alto-1)            // But, it starts drawing from UpperLeft corner
   foreach dir in [Norte, Sur] {         // Each time, draw one L of the square
     LMC_DibujarLado_DeLongitud_(lmc, dir           , ancho-1)
-    LMC_DibujarLado_DeLongitud_(lmc, siguiente(dir), ancho-1)
+    LMC_DibujarLado_DeLongitud_(lmc, siguiente(dir), alto-1)
   }
 }
 
@@ -108,6 +114,7 @@ procedure LMC_DibujarLaEsquina_(lmc, dir) {
   Mover(siguiente(dir))
 }
 
+/*@ATTRIBUTE@atomic@*/
 procedure LMC_DibujarParedRectaDeLongitud_Al_(lmc, long, dir) {
   wallRep := lmc_straigthWallRepInDir_(lmc, dir) // Stored for efficiency during the repetition
   repeat (long) {
@@ -122,7 +129,7 @@ procedure LMC_DibujarFilaDeMemoria_(lmc, row) {
       LMC_PonerContenido_(lmc, mb)
       Mover(Este)
     }
-    foreach mb in row { Mover (Oeste) }  // Return the header to the starting cell
+    Mover__Veces(Oeste, length(row))  // Return the header to the starting cell
 }
 
 procedure LMC_PonerSlot_Towards_At_(lmc, elem, dir, coord) {

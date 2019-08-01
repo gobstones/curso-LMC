@@ -88,12 +88,12 @@ function aux_cantOf_(elemRep) {
 }
 
 function lmcRep_haltedLM(lmRep) {
-  let (color, valores) := lmRep
+  let (color, valores) := lm(lmRep)
   return (color, primero(valores))
 }
 
 function lmcRep_activeLM(lmRep) {
-  let (color, valores) := lmRep
+  let (color, valores) := lm(lmRep)
   return (color, segundo(valores))
 }
 

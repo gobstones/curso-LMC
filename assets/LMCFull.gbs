@@ -57,6 +57,10 @@ type LMC is record {
 //   function lmc_absoluteIZplace  (lmcPlace)
 //   function lmc_absoluteDZplace  (lmcPlace)
 //-------------------------------
+function emptyLMCWithMemSize_(memSize) {
+  return(emptyLMCWithMemSize_AndMemWidth_(memSize,10))
+}
+
 function emptyLMCWithMemSize_AndMemWidth_(memSize, memWidth) {
   return(LMC(model          <- emptyLMCModelWithMemSize_AndMemWidth_(memSize, memWidth)
             ,representation <- lmcRepresentation()
@@ -133,8 +137,8 @@ function lmc_izRep (lmc) { return(iz (representation(lmc))) }
 function lmc_dzRep (lmc) { return(dz (representation(lmc))) }
 
 function lmc_lmRep(lmc) { 
-  return(choose lmcRep_haltedLM(lmcRep) when (lmc_isHalted(lmc))
-                lmcRep_activeLM(lmcRep) otherwise)
+  return(choose lmcRep_haltedLM(representation(lmc)) when (lmc_isHalted(lmc))
+                lmcRep_activeLM(representation(lmc)) otherwise)
 }
 
 function lmc_inputFlow (lmc) { return(lmcPlace_inpFlow(placing(lmc))) }
