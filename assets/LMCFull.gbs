@@ -57,10 +57,12 @@ type LMC is record {
 //   function lmc_absoluteIZplace  (lmcPlace)
 //   function lmc_absoluteDZplace  (lmcPlace)
 //-------------------------------
+/*@ATTRIBUTE@block_name@empty LMC with memSize _@*/
 function emptyLMCWithMemSize_(memSize) {
   return(emptyLMCWithMemSize_AndMemWidth_(memSize,10))
 }
 
+/*@ATTRIBUTE@block_name@empty LMC with memSize _ and memWidth _@*/
 function emptyLMCWithMemSize_AndMemWidth_(memSize, memWidth) {
   return(LMC(model          <- emptyLMCModelWithMemSize_AndMemWidth_(memSize, memWidth)
             ,representation <- lmcRepresentation()
@@ -98,10 +100,14 @@ function lmc_roomWidth(lmc)   { // The width of the room
          +lmcPlace_wallsWidth(placing(lmc)))
 }
 
+/*@ATTRIBUTE@block_name@load input _ on LMC _@*/
 function loadInput_OnLMC_(input, lmc)        { return (LMC (lmc | model <- lmcModel_loadInput_           (model(lmc), input))) }
+/*@ATTRIBUTE@block_name@load program _ on LMC _@*/
 function loadProgram_OnLMC_(prog, lmc)       { return (LMC (lmc | model <- lmcModel_loadProgram_         (model(lmc), prog)))  }
+/*@ATTRIBUTE@block_name@_ execute program@*/
 function lmc_executeProgram(lmc)             { return (LMC (lmc | model <- lmcModel_executeProgram       (model(lmc))))        }
 function lmc_debugProgram_Steps(lmc, cant)   { return (LMC (lmc | model <- lmcModel_debugProgram_Steps   (model(lmc), cant)))  }
+/*@ATTRIBUTE@block_name@_ execute program _ steps@*/
 function lmc_executeProgram_Steps(lmc, cant) { return (LMC (lmc | model <- lmcModel_executeProgram_Steps (model(lmc), cant)))  }
 function lmc_executeProgramOneStep(lmc)      { return (LMC (lmc | model <- lmcModel_executeProgramOneStep(model(lmc))))        }
 function lmc_inspectDebugAtStep_(lmc, step)  { return (LMC (lmc | model <- lmcModel_inspectDebugAtStep_  (model(lmc), step)))  }

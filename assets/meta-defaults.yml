@@ -10,10 +10,10 @@ blocks:
      <category name="Operaciones de la LMC">
        <block type="PonerLMC_"></block>
        <block type="emptyLMCWithMemSize_"></block>
-       <block type="loadInput_On_"></block>
-       <block type="loadProgram_On_"></block>
-       <block type="execute_Program"></block>
-       <block type="execute_Program_Steps"></block>
+       <block type="loadInput_OnLMC_"></block>
+       <block type="loadProgram_OnLMC_"></block>
+       <block type="lmc_executeProgram"></block>
+       <block type="lmc_executeProgram_Steps"></block>
      </category>
      <category name="Mis procedimientos" custom="PROCEDURE_CALLS">
      </category>
