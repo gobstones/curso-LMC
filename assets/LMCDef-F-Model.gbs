@@ -8,22 +8,6 @@
 // REQUIRES: LMCDef-Form
 // REQUIRES: LMCDef-FM-Mem
 
-//-------------------------------
-//type LMCModel is LMCForm(
-//      lm       -> Booleano
-//    , pc       -> Número
-//    , acc      -> Número
-//    , neg      -> Booleano
-//    , inp      -> Lista de Números
-//    , out      -> Lista de Números
-//    , mbs      -> Lista de Listas de Números
-//    , bounds   -> (Número, Número)
-//    , wz       -> Maybe(value -> Número)
-//    , iz       -> Maybe(value -> Número)
-//    , dz       -> Maybe(value -> Número)
-//    , contents -> Número
-//}
-//-------------------------------
 
 //-------------------------------
 // LMCModel external operations
@@ -39,7 +23,26 @@
 //    function lmcModel_executeProgram_Steps(lmc, cant)
 //    function lmcModel_executeProgrammOneStep(lmc)
 //    function lmcModel_inspectDebugAtStep_(lmc, steps)
+//    function lmcModelTemplate()
+//----------------------------------------------------------
 //-------------------------------
+//type LMCModel is LMCForm(
+//      contents -> Número
+//    , bounds   -> (Número, Número)
+//    , inp      -> Lista de Números
+//    , lm       -> Booleano
+//    , pc       -> Número
+//    , acc      -> Número
+//    , neg      -> Booleano
+//    , wz       -> Maybe(value -> Número)
+//    , iz       -> Maybe(value -> Número)
+//    , dz       -> Maybe(value -> Número)
+//    , out      -> Lista de Números
+//    , mbs      -> Lista de Listas de Números
+//}
+//-------------------------------
+
+//----------------------------------------------------------
 /*@ATTRIBUTE@block_name@empty LMC with mem size_ and width_@*/
 function emptyLMCModelWithMemSize_AndMemWidth_(memSize, memWidth) {
   /* PURPOSE: describes a LMCForm of type LMCModel, with an empty configuration
@@ -48,18 +51,18 @@ function emptyLMCModelWithMemSize_AndMemWidth_(memSize, memWidth) {
   */
   Assert_OrFailWith_(memSize <= 100, "Memory too big in emptyLMC -- it must be <= 100")
   let myBounds := (memSize, memWidth)
-  return (LMCForm(lm       <- True                  // The Little Man starts active
+  return (LMCForm(contents <- 100                   // The base to separate instructions from data
+                , bounds   <- myBounds              // The BOUNDS are the number of available mailboxes, and the width of a row
+                , inp      <- []                    // The INPut is initially empty
+                , lm       <- True                  // The Little Man starts active
                 , pc       <- 0                     // The Program Counter in 0
                 , acc      <- 0                     // The Accumulator also in 0
                 , neg      <- False                 // No NEGatives results so far
-                , inp      <- []                    // The INPut is initially empty
-                , out      <- []                    // The OUTput is initially empty
-                , mbs      <- emptyMemOf_(myBounds) // The MailBoxeS all in zero
-                , bounds   <- myBounds              // The BOUNDS are the number of available mailboxes, and the width of a row
                 , wz       <- Nothing               // The Working Zone is not set
                 , iz       <- Nothing               // The Instruction Zone is not set
                 , dz       <- Nothing               // The Data Zone is not set
-                , contents <- 100                   // The base to separate instructions from data
+                , out      <- []                    // The OUTput is initially empty
+                , mbs      <- emptyMemOf_(myBounds) // The MailBoxeS all in zero
          ))
 }
 
@@ -122,6 +125,7 @@ function lmcModel_inspectDebugAtStep_(lmc, step) {
           , value(dz(lmcToSee))
           , lmcToSee)
 }
+//----------------------------------------------------------
 
 //-------------------------------
 // LMC Basics
@@ -138,6 +142,7 @@ function resetsPC_(lmc)             { return(LMCForm (lmc | pc  <- 0))     }
 function setNegLMC_(lmc)            { return(LMCForm (lmc | neg <- True))  }
 function clearNegLMC_(lmc)          { return(LMCForm (lmc | neg <- False)) }
 function aux_lmcModel_isHalted(lmc) { return(not lm(lmc))                  }
+//----------------------------------------------------------
 
 //-------------------------------
 // LMC Instructions
@@ -244,7 +249,7 @@ function outputLMC_(lmc) {
   */
 return (LMCForm (lmc | out <- out(lmc) ++ [ acc(lmc) ]))             
 }
-
+//----------------------------------------------------------
 
 //-------------------------------
 // LMC inner working
@@ -310,6 +315,7 @@ function executeInstruction_(lmc) {
             boom("Instruction not recognized in executeInstruction -- review the program loaded") otherwise
   return (resetsInsLMC_(lmc'))
 }  
+//----------------------------------------------------------
 
 //-------------------------------
 // Auxiliaries for inner working
@@ -340,3 +346,23 @@ function usesValue_(insCode) {
        || insCode == 8      // BRP uses the opCode value (to set the PC)
        || insCode == 9)
 }
+//----------------------------------------------------------
+
+//----------------------------------------------------------
+function lmcModelTemplate() {
+  /* PURPOSE: provides a basic template with the right types for fields */
+  return (LMCForm(lm       <- True                  
+                , pc       <- 0                     
+                , acc      <- 0                     
+                , neg      <- True                 
+                , inp      <- [0]                    
+                , out      <- [0]                    
+                , mbs      <- [[0]]
+                , bounds   <- (0,0) 
+                , wz       <- just(0)
+                , iz       <- just(0)               
+                , dz       <- just(0)               
+                , contents <- 0                
+         ))
+}
+//----------------------------------------------------------

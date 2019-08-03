@@ -1,0 +1,206 @@
+//===============================================================
+//===============================================================
+//==== LMC Board Reading
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+// REQUIRES: LMCDef-Form
+// REQUIRES: LMCDef-FM-Mem
+// REQUIRES: LMCDef-F-Model
+// REQUIRES: LMCDef-F-BoardRep
+// REQUIRES: LMCDef-F-BoardPlace
+// REQUIRES: LMCDef-Full
+
+//----------------------------------------------------------
+// Reading of an LMC from the board
+//----------------------------------------------------------
+function currentLMCWithRep_(lmcRep) {
+  /* PRECONDITION: there is an LMC represented on the board following the given representation
+     OBSERVATIONS:
+       * it is done operationally for efficiency
+  */
+  lmcPlace := lmcPlaceTemplate()
+  lmcModel := lmcModelTemplate()
+
+  let (ancho    , alto       , wallCoord) := wallDataWithRep_(lmcRep)
+  let (memBounds, memContents, memCoord)  := memDataWithRep_(lmcRep)
+  let (inpDir   , inputC     , inpCoord)  := inputDataWithRep_(lmcRep)
+  let (outDir   , outputC    , outCoord)  := outputDataWithRep_(lmcRep)
+  let (lmIsActive            , lmCoord)   := lmDataWithRep_(lmcRep)
+  let (pcC                   , pcCoord)   := pcDataWithRep_(lmcRep)
+  let (accC                  , accCoord)  := accDataWithRep_(lmcRep)
+  let (negC                  , negCoord)  := negDataWithRep_(lmcRep)
+  let (wzC                   , wzCoord)   := wzDataWithRep_(lmcRep)
+  let (izC                   , izCoord)   := izDataWithRep_(lmcRep)
+  let (dzC                   , dzCoord)   := dzDataWithRep_(lmcRep)
+
+  originCoord := relativize_WRT_(wallCoord, (1,0))
+  wallCoord   := relativize_WRT_(wallCoord, originCoord)
+  lmcModel := LMCForm(contents <- 100
+                    , bounds   <- memBounds
+                    , inp      <- inputC
+                    , lm       <- lmIsActive
+                    , pc       <- pcC
+                    , acc      <- accC
+                    , neg      <- num2bool(negC)
+                    , wz       <- maybeFromNum(wzC)
+                    , iz       <- maybeFromNum(izC)
+                    , dz       <- maybeFromNum(dzC)
+                    , out      <- outputC
+                    , mbs      <- memContents
+                    )
+  lmcPlace := LMCForm(contents <- originCoord
+                    , bounds   <- wallCoord
+                    , inp      <- (relativize_WRT_(inpCoord,wallCoord), inpDir)
+                    , lm       <- relativize_WRT_(lmCoord  ,wallCoord)
+                    , pc       <- relativize_WRT_(pcCoord  ,wallCoord)
+                    , acc      <- relativize_WRT_(accCoord ,wallCoord)
+                    , neg      <- relativize_WRT_(negCoord ,wallCoord)
+                    , wz       <- relativize_WRT_(wzCoord  ,wallCoord)
+                    , iz       <- relativize_WRT_(izCoord  ,wallCoord)
+                    , dz       <- relativize_WRT_(dzCoord  ,wallCoord)
+                    , out      <- (relativize_WRT_(outCoord,wallCoord), outDir)
+                    , mbs      <- relativize_WRT_(memCoord ,wallCoord)
+                    )
+  return(LMC(model <- lmcModel, representation <- lmcRep, placing <- lmcPlace))
+}
+
+//----------------------------------------------------------
+// Auxiliary operations for reading LMCs
+//   (all assume the same precondition as currentLMCWithRep_: there is a LMC represented on the board)
+//----------------------------------------------------------
+//----------------------------------------------------------
+function wallDataWithRep_(lmcRep) {
+  let (wallColor, wallCant) := lmcRep_cornerWall_(lmcRep, Oeste)
+  EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(wallCant,wallColor,Norte,Este) 
+    // Precond. implies that there is only one of those
+  ancho     := widthOfLMCRoom_(wallColor)
+  alto      := heightOfLMCRoom_(wallColor)
+  return (ancho, alto, coordActual())
+}
+
+function widthOfLMCRoom_ (wallColor)     { return(lengthOfLine_InDir_(wallColor, Este))  }
+function heightOfLMCRoom_(wallColor)     { return(lengthOfLine_InDir_(wallColor, Norte)) }
+
+//----------------------------------------------------------
+//----------------------------------------------------------
+function memDataWithRep_(lmcRep) {
+  let (memColor, memCant) := mbs(lmcRep)
+  EncontrarPrimeraCeldaConExactamente_Bolitas_EnRecorrido__(memCant,memColor,Norte,Este)
+  let (memBounds, memContents) := memContentsWithRep_(lmcRep)
+  return (memBounds, memContents, coordActual())
+}
+
+function memContentsWithRep_(lmcRep) {
+  let (memColor, memCant)      := mbs(lmcRep)
+  let (rowSize, filaActual) := memRowContentsWithRep_(lmcRep)
+  memSize    := rowSize
+  memSoFar   := [ filaActual ]
+  newRowSize := rowSize
+  while (puedeMover(Norte)                      // If there are more rows (there should be at least one more row, with the North wall)
+     && nroBolitas_Al_(memColor,Norte)==memCant // and this is not the last memory row 
+     && rowSize == newRowSize) {                // and the last read row is of the same length as the first one (the last one may be smaller)
+     Mover(Norte)
+     let (newRowSize, filaActual) := memRowContentsWithRep_(lmcRep)
+     memSize  := memSize + newRowSize
+     memSoFar := memSoFar ++ [ filaActual ]
+  }
+  Assert_OrFailWith_(nroBolitas_Al_(memColor, Norte) /= memCant 
+                  && memSize /= 0
+                    ,"The memory has not a right shape -- check if there is a LMC represented using the given representation")
+  return ((memSize, rowSize), memSoFar)
+}
+
+function memRowContentsWithRep_(lmcRep) {
+  let (memColor, memCant) := mbs(lmcRep)
+  contentsColor        := aux_colorOf_(contents(lmcRep))
+  rowSize  := 0
+  rowSoFar := []
+  while (puedeMover(Este) && nroBolitas(memColor)==memCant) {
+     rowSoFar := rowSoFar ++ [ nroBolitas(contentsColor) ]
+     rowSize  := rowSize + 1
+     Mover(Este)
+  }
+  Assert_OrFailWith_(nroBolitas_Al_(memColor, Este)/=memCant && rowSize /= 0
+                    ,"A memory row has not a right shape -- check if there is a LMC represented using the given representation")
+  return(rowSize, rowSoFar)
+}
+
+//----------------------------------------------------------
+//----------------------------------------------------------
+function inputDataWithRep_(lmcRep) {
+  let (wallColor, wallCant) := lmcRep_straigthWallInDir_(lmcRep, Norte)
+  let (inpColor , inpCant)  := inp(lmcRep)
+  EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(inpCant ,inpColor
+                                                                ,wallCant,wallColor
+                                                                ,Norte,Este)
+  possibleInpDirs := direccionesHacia_Bolitas_Vecinas(inpCant, inpColor) 
+  Assert_OrFailWith_(length(possibleInpDirs)==1, "The input has not a right shape -- there should be a slot with two adjacents cells for input")
+  inpDir          := primero(possibleInpDirs)
+  inpContents     := ioContentsWithRep_To_(lmcRep, inpDir)
+  return (inpDir, inpContents, coordActual())
+}
+
+function outputDataWithRep_(lmcRep) {
+  let (wallColor, wallCant) := lmcRep_straigthWallInDir_(lmcRep, Norte)
+  let (outColor , outCant)  := out(lmcRep)
+  EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(outCant ,outColor
+                                                                ,wallCant,wallColor
+                                                                ,Norte,Este)
+  possibleOutDirs := direccionesHacia_Bolitas_Vecinas(outCant, outColor) 
+  Assert_OrFailWith_(length(possibleOutDirs)==1, "The output has not a right shape -- there should be a slot with two adjacents cells for output")
+  outDir          := primero(possibleOutDirs)
+  outContents := ioContentsWithRep_To_(lmcRep, outDir)
+  return (outDir, outContents, coordActual())
+
+}
+
+function ioContentsWithRep_To_(lmcRep, dirOfSecondElem) {
+  contentsColor   := aux_colorOf_(contents(lmcRep))
+  ioContentsSoFar := []
+  if (nroBolitas(contentsColor) > 0) { 
+    // First element is separated from the rest
+    ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] 
+    Mover(dirOfSecondElem)
+    // The remaining elements, if they exist
+    while (nroBolitas(contentsColor)>0 && puedeMover(Norte)) {
+      ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] 
+      Mover(Norte)
+    }
+    // Border case (when it reaches the North border)
+    if (not puedeMover(Norte) && nroBolitas(contentsColor)>0) 
+      { ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ]}
+  }
+  return (ioContentsSoFar)
+}
+
+//----------------------------------------------------------
+//----------------------------------------------------------
+function lmDataWithRep_(lmcRep) {
+  let (lmColor , lmActiveCant) := lmcRep_activeLM(lmcRep)
+  let (lmColor', lmHaltedCant) := lmcRep_haltedLM(lmcRep)
+  EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(lmActiveCant, lmColor, Norte, Este)
+  if (nroBolitas(lmColor)/=lmActiveCant) {
+    EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(lmHaltedCant, lmColor, Norte, Este)
+    Assert_OrFailWith_(nroBolitas(lmColor)==lmHaltedCant, "The LMC is not complete -- little man is not present")     
+  }
+  return (nroBolitas(lmColor)==lmActiveCant, coordActual())
+}
+
+//----------------------------------------------------------
+//----------------------------------------------------------
+function pcDataWithRep_(lmcRep)  { return (elemContentsWithRep___(pc(lmcRep) , aux_colorOf_(contents(lmcRep)), "The LMC is not complete -- it should contain a pc" )) }
+function accDataWithRep_(lmcRep) { return (elemContentsWithRep___(acc(lmcRep), aux_colorOf_(contents(lmcRep)), "The LMC is not complete -- it should contain a acc")) }
+function negDataWithRep_(lmcRep) { return (elemContentsWithRep___(neg(lmcRep), aux_colorOf_(contents(lmcRep)), "The LMC is not complete -- it should contain a neg")) }
+function wzDataWithRep_(lmcRep)  { return (elemContentsWithRep___(wz(lmcRep) , aux_colorOf_(contents(lmcRep)), "The LMC is not complete -- it should contain a wz" )) }
+function izDataWithRep_(lmcRep)  { return (elemContentsWithRep___(iz(lmcRep) , aux_colorOf_(contents(lmcRep)), "The LMC is not complete -- it should contain a iz" )) }
+function dzDataWithRep_(lmcRep)  { return (elemContentsWithRep___(dz(lmcRep) , aux_colorOf_(contents(lmcRep)), "The LMC is not complete -- it should contain a dz" )) }
+
+function elemContentsWithRep___(elemRep, contentsColor, errMsg) {
+  let (elemColor, elemCant) := elemRep
+  EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(elemCant, elemColor, Norte, Este)
+  Assert_OrFailWith_(nroBolitas(elemColor)==elemCant, errMsg)
+  return (nroBolitas(contentsColor), coordActual())
+}
+

@@ -9,7 +9,6 @@
 // REQUIRES: LMCDef-FM-Mem
 // REQUIRES: LMCDef-F-Model
 
-
 //----------------------------------------------------------
 // LMC's Board Placement
 //   function lmcPlacementForMemWidth_(memWidth)
@@ -30,25 +29,28 @@
 //   function lmcPlace_wallsWidth(lmcPlace)
 //   function lmcPlace_IOWidth(lmcPlace)
 //   function lmcPlace_setOriginTo_(lmcPlace, coord)
+//   function lmcPlaceTemplate()
+//----------------------------------------------------------
 //----------------------------------------------------------
 //type Coord is (Número, Número)
 //type LMCBoardPlace is LMCForm(
 //    /* The inp and out occupy 2 cells, and mbs and bounds are the origin of a square.
 //       The space ocupied is calculated according to the actual lmc.
 //    */
-//      lm       -> Coord               // Relative to bounds
+//      contents -> Coord               // Current position, relative (ideally, the same of LM)
+//    , bounds   -> Coord               // LowerLeft corner, absolute
+//    , inp      -> (Coord, Dirección)  // Base coord, dir of second coord, relative to bounds
+//    , lm       -> Coord               // Relative to bounds
 //    , pc       -> Coord               // Relative to bounds
 //    , acc      -> Coord               // Relative to bounds
 //    , neg      -> Coord               // Relative to bounds
-//    , inp      -> (Coord, Dirección)  // Base coord, dir of second coord, relative to bounds
-//    , out      -> (Coord, Dirección)  // Base coord, dir of second coord, relative to bounds
-//    , mbs      -> Coord               // LowerLeft corner, relative to bounds
-//    , bounds   -> Coord               // LowerLeft corner, absolute
 //    , wz       -> Coord               // Relative to bounds
 //    , iz       -> Coord               // Relative to bounds
 //    , dz       -> Coord               // Relative to bounds
-//    , contents -> Coord               // Current position, relative (ideally, the same of LM)
+//    , out      -> (Coord, Dirección)  // Base coord, dir of second coord, relative to bounds
+//    , mbs      -> Coord               // LowerLeft corner, relative to bounds
 //}
+//----------------------------------------------------------
 
 //----------------------------------------------------------
 function lmcPlacementForMemWidth_(memWidth) {
@@ -83,7 +85,9 @@ function lmcPlacementForMemWidth_(memWidth) {
                 , mbs      <-  (            1,3)         // The MailBoxeS left corner position and width
          ))
 }
+//----------------------------------------------------------
 
+//----------------------------------------------------------
 function lmcPlace_absoluteBASEplace (lmcPlace) { return (displace_From_(bounds(lmcPlace)                                    , contents(lmcPlace))) }
 function lmcPlace_absoluteLMplace   (lmcPlace) { return (displace_From_(displace_From_(lm (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
 function lmcPlace_absolutePCplace   (lmcPlace) { return (displace_From_(displace_From_(pc (lmcPlace)     , bounds(lmcPlace)), contents(lmcPlace))) }
@@ -114,7 +118,6 @@ function lmcPlace_IOWidth(lmcPlace) {
   return(2)                      // INP and OUT are represented in a single line each
 }
 
-function aux_WallThickness() { return (1) } // The number of cells used for a wall
 
 function lmcPlace_setOriginTo_(lmcPlace, coord) {
   return (LMCForm(lmcPlace | contents <- coord))
@@ -122,3 +125,29 @@ function lmcPlace_setOriginTo_(lmcPlace, coord) {
 
 function lmcPlace_inpFlow(lmcPlace) { return(snd(inp(lmcPlace))) }
 function lmcPlace_outFlow(lmcPlace) { return(snd(out(lmcPlace))) }
+//----------------------------------------------------------
+
+//----------------------------------------------------------
+//----------------------------------------------------------
+function aux_WallThickness() { return (1) } // The number of cells used for a wall
+//----------------------------------------------------------
+//----------------------------------------------------------
+
+//----------------------------------------------------------
+function lmcPlaceTemplate() {
+  /* PURPOSE: provides a basic template with the right types for fields */
+  return (LMCForm(contents <-  (0,0)         
+                , bounds   <-  (0,0)         
+                , inp      <- ((0,0), Oeste) 
+                , lm       <-  (0,0)         
+                , pc       <-  (0,0)         
+                , acc      <-  (0,0)         
+                , neg      <-  (0,0)         
+                , wz       <-  (0,0)         
+                , iz       <-  (0,0)         
+                , dz       <-  (0,0)         
+                , out      <- ((0,0), Este)  
+                , mbs      <-  (0,0)         
+         ))
+}
+//----------------------------------------------------------

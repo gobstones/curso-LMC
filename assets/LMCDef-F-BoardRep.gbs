@@ -18,55 +18,51 @@
 //   function lmcRep_contents_(lmcRep, value)
 //   function lmcRep_haltedLM(lmRep)
 //   function lmcRep_activeLM(lmRep)
+//   function lmcRepTemplate()
+//----------------------------------------------------------
 //----------------------------------------------------------
 //type LMCBoardRep is LMCForm(
 //    /* The lm and bounds have several states... */
-//      lm       -> (Color, Lista de Números)
+//      contents -> (Color, Número)
+//    , bounds   -> (Color, Lista de Números)
+//    , inp      -> (Color, Número)
+//    , lm       -> (Color, Lista de Números)
 //    , pc       -> (Color, Número)
 //    , acc      -> (Color, Número)
 //    , neg      -> (Color, Número)
-//    , inp      -> (Color, Número)
-//    , out      -> (Color, Número)
-//    , mbs      -> (Color, Número)
-//    , bounds   -> (Color, Lista de Números)
 //    , wz       -> (Color, Número)
 //    , iz       -> (Color, Número)
 //    , dz       -> (Color, Número)
-//    , contents -> (Color, Número)
+//    , out      -> (Color, Número)
+//    , mbs      -> (Color, Número)
 //}
+//----------------------------------------------------------
 
 //----------------------------------------------------------
 function lmcRepresentation() {
    /* PURPOSE: describes a LMCForm of type LMCBoardRep, with a representation of an LMC
       PRECONDITIONS: none
   */
-  return (LMCForm(lm       <- (Verde, [ 11, 1 ])      // The Little Man representation (Halted, Active)
+  return (LMCForm(contents <- (Azul ,  0)             // The numeric CONTENTS of mailboxes; any number will do
+                , bounds   <- (Rojo , [1,2,3,4,5,6])  // The BOUNDS are walls representation (Vertical, Horizontal, NO(N), NE(E), SE(S), SO(O)
+                , inp      <- (Negro,  2)             // The INPut place representation
+                , lm       <- (Verde, [ 11, 1 ])      // The Little Man representation (Halted, Active)
                 , pc       <- (Negro, 10)             // The Program Counter place representation
                 , acc      <- (Negro, 11)             // The Accumulator place representation
                 , neg      <- (Negro, 12)             // The NEGative flag place representation
-                , inp      <- (Negro,  2)             // The INPut place representation
-                , out      <- (Negro,  3)             // The OUTput place representation
-                , mbs      <- (Negro,  1)             // The MailBoxeS places representation
-                , bounds   <- (Rojo , [1,2,3,4,5,6])  // The BOUNDS are walls representation (Vertical, Horizontal, NO(N), NE(E), SE(S), SO(O)
                 , wz       <- (Negro, 20)             // The Working Zone place representation
                 , iz       <- (Negro, 21)             // The Instruction Zone place representation
                 , dz       <- (Negro, 22)             // The Data Zone place representation
-                , contents <- (Azul ,  0)             // The numeric CONTENTS of mailboxes; any number will do
+                , out      <- (Negro,  3)             // The OUTput place representation
+                , mbs      <- (Negro,  1)             // The MailBoxeS places representation
          ))
 }
+//----------------------------------------------------------
 
+//----------------------------------------------------------
 function lmcRep_cornerWall_(lmcRep, direction) {
   let (color, valores) := bounds(lmcRep)
   return (color, elemAt_In_(aux_corner2Index(direction), valores))
-}
-
-function aux_corner2Index(dir) {
-   return (matching (dir) select
-             2 on Norte
-             3 on Este
-             4 on Sur
-             5 otherwise
-          )
 }
 
 function lmcRep_straigthWallInDir_(lmcRep, dir) {
@@ -75,9 +71,31 @@ function lmcRep_straigthWallInDir_(lmcRep, dir) {
                         primero(valores) otherwise)
 }
 
-function aux_isHorizontal_(dir) { return (dir==Norte || dir==Sur) }
+function aux_isHorizontal_(dir) { return (dir==Este || dir==Oeste) }
 
 function lmcRep_contents_(lmcRep, value) { return(aux_modifyValueOf_With_(contents(lmcRep), value)) }
+
+function lmcRep_haltedLM(lmRep) {
+  let (color, valores) := lm(lmRep)
+  return (color, primero(valores))
+}
+
+function lmcRep_activeLM(lmRep) {
+  let (color, valores) := lm(lmRep)
+  return (color, segundo(valores))
+}
+//----------------------------------------------------------
+
+//----------------------------------------------------------
+//----------------------------------------------------------
+function aux_corner2Index(dir) {
+   return (matching (dir) select
+             2 on Norte
+             3 on Este
+             4 on Sur
+             5 otherwise
+          )
+}
 
 function aux_modifyValueOf_With_(elemRep, value) {
   return((fst(elemRep), value))
@@ -92,14 +110,24 @@ function aux_cantOf_(elemRep) {
   let (color, value) := elemRep
   return (value)
 }
+//----------------------------------------------------------
+//----------------------------------------------------------
 
-function lmcRep_haltedLM(lmRep) {
-  let (color, valores) := lm(lmRep)
-  return (color, primero(valores))
+//----------------------------------------------------------
+function lmcRepTemplate() {
+   /* PURPOSE: provides a basic template with the right types for fields */
+  return (LMCForm(lm       <- (Negro, [0,0])      
+                , bounds   <- (Negro, [0,0,0,0,0,0])  
+                , pc       <- (Negro, 0)             
+                , acc      <- (Negro, 0)             
+                , neg      <- (Negro, 0)             
+                , inp      <- (Negro, 0)             
+                , out      <- (Negro, 0)             
+                , mbs      <- (Negro, 0)             
+                , wz       <- (Negro, 0)             
+                , iz       <- (Negro, 0)             
+                , dz       <- (Negro, 0)             
+                , contents <- (Negro, 0)             
+         ))
 }
-
-function lmcRep_activeLM(lmRep) {
-  let (color, valores) := lm(lmRep)
-  return (color, segundo(valores))
-}
-
+//----------------------------------------------------------

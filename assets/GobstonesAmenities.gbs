@@ -13,14 +13,29 @@ type Maybe is variant {
 }
 
 function just(val) { return (Just(value <- val)) }
+function isJust_(maybeVal) { 
+  return (matching (maybeVal) select 
+            True  on Just
+            False otherwise)
+}
+function fromJust(maybeVal) {
+  return (matching (maybeVal) select 
+            value(maybeVal)              on Just
+            boom("Nothing has no value") otherwise)
+}
 function numFromMaybe(maybeNum) {
   return (matching (maybeNum) select
             value(maybeNum) on Just
-            0               otherwise
+            0               otherwise)
+}
+function maybeFromNum(num) {
+  return (choose Nothing   when (num==0)
+                 just(num) otherwise
          )
 }
 
 function bool2num(b) { return (choose 1 when (b) 0 otherwise) }
+function num2bool(n) { return (n/=0) }
 
 function fst(par) {
   let (a,b) := par
@@ -61,6 +76,21 @@ procedure MoverHacia__Veces(dirección, cantidad) {
   else { Mover__Veces(opuesto(dirección), opuesto(cantidad)) }
 }
 
+function nroBolitas_Al_(color, dir) { 
+  Mover(dir)
+  return (nroBolitas(color))
+}
+
+function lengthOfLine_InDir_(color, dir) {
+  lenghtSoFar := 0
+  while (hayBolitas(color) && puedeMover(dir)) {
+     lenghtSoFar := lenghtSoFar + 1
+     Mover(dir)
+  }
+  if (hayBolitas(color)) { lenghtSoFar := lenghtSoFar + 1 }
+  return(lenghtSoFar)
+}
+
 //-------------------------------
 // Gobstones positioning
 //-------------------------------
@@ -98,6 +128,12 @@ function displace_From_(offset, baseCoord) {
   return (x+dx, y+dy)
 }
 
+function relativize_WRT_(targetCoord, baseCoord) {
+  let (x ,y ) := targetCoord
+  let (x0,y0) := baseCoord
+  return (x-x0, y-y0)
+}
+
 function distanciaAlBorde_(dir) {
   pasosDados := 0
   while (puedeMover(dir)) { 
@@ -106,6 +142,23 @@ function distanciaAlBorde_(dir) {
   }
   return (pasosDados)
 }
+
+//----------------------------------------------------------
+// Asserting about exact number of stones in some cells
+//----------------------------------------------------------
+function laCeldaTieneExactamente_Bolitas_(cant, color) {
+  return (nroBolitas(color) == cant)
+}  
+
+function hayExactamente_Bolitas_Al_(cant, color, dir) {
+  return (puedeMover(dir) && laCeldaAl_TieneExactamente_Bolitas_(dir, cant, color))
+}
+
+function laCeldaAl_TieneExactamente_Bolitas_(dir, cant, color) {
+  /* PRECONDITION: there is a neighbor cell in the given direction */
+  Mover(dir)
+  return (laCeldaTieneExactamente_Bolitas_(cant, color))
+}  
 
 //----------------------------------------------------------
 // Reading and writing of the board
@@ -165,3 +218,101 @@ procedure PonerCelda_(celda) {
     Poner__Veces(Verde, verde)
 }
 
+//----------------------------------------------------------
+// Traversing the board
+//----------------------------------------------------------
+procedure IniciarRecorrido__(dirPpal, dirSec) {
+  IrAlBorde(opuesto(dirPpal))
+  IrAlBorde(opuesto(dirSec))
+}
+
+function  esFinDeRecorrido__(dirPpal, dirSec) {
+  return (not puedeMover(dirPpal) && not puedeMover(dirSec))
+}
+
+procedure PasarASiguienteCeldaDeRecorrido__(dirPpal, dirSec) {
+  /* PRECONDITION: not esFinDeRecorrido__(dirPpal, dirSec) */
+  if (puedeMover(dirSec)) { Mover(dirSec)                             }
+   else                   { IrAlBorde(opuesto(dirSec)) Mover(dirPpal) }
+}
+
+//----------------------------------------------------------
+// Finding a cell with some number of stones of 1 color
+//----------------------------------------------------------
+procedure EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(cant,color,dirPpal,dirSec) {
+  // Asking for the same color twice is the same as asking once, because (&&) is idempotent
+  EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant,color,cant,color,dirPpal,dirSec)
+}
+
+procedure EncontrarPrimeraCeldaConExactamente_Bolitas_EnRecorrido__(cant,color,dirPpal,dirSec) {
+  // Asking for the same color twice is the same as asking once, because (&&) is idempotent
+  EncontrarPrimeraCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant,color,cant,color,dirPpal,dirSec)
+}
+
+procedure EncontrarSiguienteCeldaConExactamente_Bolitas_EnRecorrido__(cant,color,dirPpal,dirSec) {
+  /* PURPOSE: positions the head over the next cell with cant stones of color, 
+              or at the corner at the board-traversal end (if such cell does not exist) 
+  */
+  // Asking for the same color twice is the same as asking once, because (&&) is idempotent
+  EncontrarSiguienteCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant,color,cant,color,dirPpal,dirSec)
+}
+
+//----------------------------------------------------------
+// Finding a cell with some number of stones of 2 colors
+//----------------------------------------------------------
+function hayUnaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant1,color1,cant2,color2,dirPpal,dirSec) {
+  EncontrarPrimeraCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant1,color1,cant2,color2,dirPpal,dirSec)
+  return (laCeldaTieneExactamente_Bolitas_(cant1, color1)
+       && laCeldaTieneExactamente_Bolitas_(cant2, color2)
+         )
+}
+
+procedure EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant1,color1,cant2,color2,dirPpal,dirSec) {
+  /* PRECONDITION: the cell with the exact number of stones must exist */
+  EncontrarPrimeraCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant1,color1,cant2,color2,dirPpal,dirSec)
+  if (not (laCeldaTieneExactamente_Bolitas_(cant1, color1)
+        && laCeldaTieneExactamente_Bolitas_(cant2, color2)
+          )) 
+    { BOOM("The cell does not exist on EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__ -- precondition established that it must exist") }
+}
+
+procedure EncontrarPrimeraCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant1,color1,cant2,color2,dirPpal,dirSec) {
+  IniciarRecorrido__(dirPpal, dirSec)
+  if (not (laCeldaTieneExactamente_Bolitas_(cant1, color1)
+        && laCeldaTieneExactamente_Bolitas_(cant2, color2)
+          )) { 
+    // Just in case the very first cell is the one we look for
+    EncontrarSiguienteCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant1,color1,cant2,color2,dirPpal,dirSec)
+  }
+}
+
+procedure EncontrarSiguienteCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant1,color1,cant2,color2,dirPpal,dirSec) {
+  /* PURPOSE: positions the head over the next cell with cant stones of color, 
+              or at the corner at the board-traversal end (if such cell does not exist) 
+     OBSERVATION: it skips the initial cell, because it looks for the NEXT  
+  */
+  if (not esFinDeRecorrido__(dirPpal, dirSec)) { 
+    PasarASiguienteCeldaDeRecorrido__(dirPpal, dirSec) // The current cell must not be considered
+    while(not (laCeldaTieneExactamente_Bolitas_(cant1, color1)
+            && laCeldaTieneExactamente_Bolitas_(cant2, color2)) 
+          && not esFinDeRecorrido__(dirPpal, dirSec)) {
+      PasarASiguienteCeldaDeRecorrido__(dirPpal, dirSec)
+    }
+  }
+}
+
+//----------------------------------------------------------
+// Finding the direction of a neighbor cell with a given number of stones
+//----------------------------------------------------------
+function direccionesHacia_Bolitas_Vecinas(cant, color) {
+  dirsSoFar := []
+  foreach dir in [minDir() .. maxDir() ] {
+    dirsSoFar := dirsSoFar ++ singleton_Si_(dir, hayExactamente_Bolitas_Al_(cant, color, dir))
+  }
+  return(dirsSoFar)
+}
+
+function singleton_Si_(valor, condición) { 
+  return(choose [valor] when (condición)
+                []      otherwise) 
+}

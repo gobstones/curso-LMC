@@ -1,9 +1,8 @@
 import System.Directory
 
-filesToImport = [ "License"          , "LMCOps-BoardDraw"
-                , "LMCDef-Programs"  , "LMCDef-F-Model"     , "LMCDef-FM-Mem"    
-                , "LMCDef-Full"      , "LMCDef-F-BoardPlace"
-                , "LMCDef-Form"      , "LMCDef-F-BoardRep"
+filesToImport = [ "License"          , "LMCOps-BoardDraw"   , "LMCOps-BoardRead"
+                , "LMCDef-Programs"  , "LMCDef-Full"        , "LMCDef-Form"      
+                , "LMCDef-F-BoardRep", "LMCDef-F-BoardPlace", "LMCDef-F-Model", "LMCDef-FM-Mem"    
                 , "GobstonesLists"   , "GobstonesAmenities"  
                 ]
 
