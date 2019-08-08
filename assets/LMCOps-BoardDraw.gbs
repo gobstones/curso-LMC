@@ -25,6 +25,7 @@ procedure PonerEmptyLMCWithMemSize_AndMemWidth_(memSize, memWidth) {
   PonerLMC_(emptyLMCWithMemSize_AndMemWidth_(memSize, memWidth))
 }
 
+/*@ATTRIBUTE@atomic@*/
 /*@ATTRIBUTE@block_name@Poner LMC _@*/
 procedure PonerLMC_(lmc) {
   VaciarTablero()
@@ -88,18 +89,24 @@ procedure LMC_DibujarElementos(lmc) {
   LMC_PonerSlot_Towards_At_               (lmc, lmc_outRep(lmc), lmc_outputFlow(lmc)      , lmc_absoluteOUTplace(lmc))
 }
 
+/*@ATTRIBUTE@atomic@*/
 procedure LMC_DibujarInputContents(lmc) {
+  initialCoord := coordActual()
   IrACoord_(lmc_absoluteINPplace(lmc))
   LMC_Poner_ElementosDeLaLista_ConElPrimeroHacia_(lmc, lmc_totalHeight(lmc)
                                                      , lmc_inpContents(lmc)
                                                      , opuesto(lmc_inputFlow(lmc)))
+  IrACoord_(initialCoord)                                                  
 }
 
+/*@ATTRIBUTE@atomic@*/
 procedure LMC_DibujarOutputContents(lmc) {
+  initialCoord := coordActual()
   IrACoord_(lmc_absoluteOUTplace(lmc))
   LMC_Poner_ElementosDeLaLista_ConElPrimeroHacia_(lmc, lmc_totalHeight(lmc)
-                                                     , lmc_outContents(lmc)
+                                                     , reversed(lmc_outContents(lmc))
                                                      , opuesto(lmc_outputFlow(lmc)))
+  IrACoord_(initialCoord)                                                  
 }
 
 procedure LMC_DibujarLittleMan(lmc) {
@@ -112,7 +119,7 @@ procedure LMC_DibujarLittleMan(lmc) {
 //----------------------------------------------------------
 procedure LMC_DibujarLado_DeLongitud_(lmc, dir, long) {
   LMC_DibujarLaEsquina_(lmc, dir)
-  LMC_DibujarParedRectaDeLongitud_Al_(lmc, long-1, dir)
+  LMC_DibujarParedRectaDeLongitud_EnLaCara_(lmc, long-1, dir)
 }
 
 procedure LMC_DibujarLaEsquina_(lmc, dir) {
@@ -121,8 +128,8 @@ procedure LMC_DibujarLaEsquina_(lmc, dir) {
 }
 
 /*@ATTRIBUTE@atomic@*/
-procedure LMC_DibujarParedRectaDeLongitud_Al_(lmc, long, dir) {
-  wallRep := lmc_straigthWallRepInDir_(lmc, dir) // Stored for efficiency during the repetition
+procedure LMC_DibujarParedRectaDeLongitud_EnLaCara_(lmc, long, dir) {
+  wallRep := lmc_straigthWallRepInDir_(lmc, siguiente(dir)) // Stored for efficiency during the repetition
   repeat (long) {
     LMC_PonerElemento_(lmc, wallRep)
     Mover(siguiente(dir)) 
@@ -152,7 +159,7 @@ procedure LMC_PonerElemento_ConContenido_En_Desde_(lmc, element, content, destin
 }
 
 procedure LMC_Poner_ElementosDeLaLista_ConElPrimeroHacia_(lmc, cant, list, dir) {
-  elementosQueFaltan  := take_ElemsFrom_(min(cant, length(list)), list)
+  elementosQueFaltan  := padList_To_With_(list, cant, 0)
   if (not esVacía(elementosQueFaltan)) {
     // The first element, on the slot
     LMC_PonerContenido_(lmc, primero(elementosQueFaltan))
@@ -182,5 +189,6 @@ procedure LMC_PonerContenido_(lmc, content) {
 procedure LMC_PonerElemento_(lmc, elemRep) {
   /* OBSERVATION: lmc is given only to have a uniform interface */
   let (color, value) := elemRep
+  SacarTodas(color)
   Poner__Veces(color, value)
 }

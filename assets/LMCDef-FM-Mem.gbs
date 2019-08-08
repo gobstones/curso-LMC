@@ -48,8 +48,8 @@ function decodeIndex_ForBounds_CalledBy_WhenDecoding_(index, bounds, caller, dat
   /* PRECONDITION: bounds is valid, 0 <= index < size
   */
   let (size, depth) := bounds
-  Assert_OrFailWith_(index < size, "Out of memory bounds at ") // ++ caller ++ " decoding " ++ dataSource)
-                                                               // Strings are not lists... :(
+  Assert_OrFailWith_(index < size, "Out of memory bounds") // at ") ++ caller ++ " decoding " ++ dataSource)
+                                                           //       Strings are not lists... :(
   let (x,y) := memShapeOf_(bounds)
   i := index mod x
   j := index div x

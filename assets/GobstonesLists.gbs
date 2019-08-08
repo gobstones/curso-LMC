@@ -5,12 +5,28 @@
 //===============================================================
 
 function segundo(list)           { return (primero(sinElPrimero(list)))     }
+function tercero(list)           { return (segundo(sinElPrimero(list)))     }
 function sinLosDosPrimeros(list) { return(sinElPrimero(sinElPrimero(list))) }
+
+// function último(list) {
+//   elementosQueFaltan := list
+//   if (esVacía(elementosQueFaltan)) { BOOM("I cannot take the last element of an empty list") }
+//   while (not esVacía(sinElPrimero(elementosQueFaltan))) {
+//     elementosQueFaltan := sinElPrimero(elementosQueFaltan)
+//   }
+//   return (primero(elementosQueFaltan))
+// }
 
 function length(list) { 
   elemSeenSoFar := 0
   foreach elem in list { elemSeenSoFar := elemSeenSoFar + 1 }
   return (elemSeenSoFar)
+}
+
+function reversed(list) { 
+  elemsSoFar := []
+  foreach elem in list { elemsSoFar := [elem] ++ elemsSoFar }
+  return (elemsSoFar)
 }
 
 function elemAt_In_(idx, list) {
@@ -67,4 +83,18 @@ function combinadosDeAPares_Y_(list1, list2) {
     currentList2 := sinElPrimero(currentList2)
   }
   return (paresVistos)
+}
+
+function trim_OfTrailing_(list, elemToTrim) {
+  elemsToReview := reversed(list)
+  while (not esVacía(elemsToReview) && primero(elemsToReview)==elemToTrim) {
+    elemsToReview := sinElPrimero(elemsToReview)
+  }
+  return(reversed(elemsToReview))
+}
+
+function padList_To_With_(list, cant, elem) {
+  return (choose   
+           take_ElemsFrom_(cant, list)                           when (cant < length(list))
+           list ++ elem_Replicado_Veces(elem, cant-length(list)) otherwise)
 }

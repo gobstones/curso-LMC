@@ -49,9 +49,10 @@ function emptyLMCModelWithMemSize_AndMemWidth_(memSize, memWidth) {
      PRECONDITIONS:
        * memSize (the number of MailBoxeS) is <= 100
   */
-  Assert_OrFailWith_(memSize <= 100, "Memory too big in emptyLMC -- it must be <= 100")
+  instructionBase := 100
+  Assert_OrFailWith_(memSize <= instructionBase, "Memory too big in emptyLMC -- it must be <= 100")
   let myBounds := (memSize, memWidth)
-  return (LMCForm(contents <- 100                   // The base to separate instructions from data
+  return (LMCForm(contents <- instructionBase       // The base to separate instructions from data
                 , bounds   <- myBounds              // The BOUNDS are the number of available mailboxes, and the width of a row
                 , inp      <- []                    // The INPut is initially empty
                 , lm       <- True                  // The Little Man starts active
@@ -104,12 +105,14 @@ function lmcModel_executeProgram_Steps(lmc, cant) {
 }
 
 function lmcModel_executeProgramOneStep(lmc) {
-  return(executeInstruction_      (
-         incrementProgramCounter_(    // If this is done after executing the instruction, the PC is not right
-         fetchData_             (
-         decodeInstruction_    (
-         fetchInstruction_(lmc)))))
-        )                  
+  return(choose
+          executeInstruction_      (
+          incrementProgramCounter_(    // If this is done after executing the instruction, the PC is not right
+          fetchData_             (
+          decodeInstruction_    (
+          fetchInstruction_(lmc))))) when (not aux_lmcModel_isHalted(lmc))
+          lmc                        otherwise
+        ) 
 }
 
 function lmcModel_inspectDebugAtStep_(lmc, step) {
@@ -118,7 +121,7 @@ function lmcModel_inspectDebugAtStep_(lmc, step) {
     lmcToSee := fetchData_             (
          decodeInstruction_    (
          fetchInstruction_(lmcToSee)))
-    dataAddr := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(wz(lmcToSee)) mod 100, bounds(lmcToSee), "lmcModel_inspectDebugAtStep_", "WZ")
+    dataAddr := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(wz(lmcToSee)) mod contents(lmc), bounds(lmcToSee), "lmcModel_inspectDebugAtStep_", "WZ")
     return(value(wz(lmcToSee)), value(iz(lmcToSee))
           , dataAddr
           , fetchPos_From_(dataAddr, mbs(lmcToSee))
@@ -156,8 +159,8 @@ function addLMC_(lmc) {
   */
   res := acc(lmc) + value(dz(lmc))
   return (LMCForm (lmc 
-            | acc <- res mod 100
-            , neg <- (res div 100) /= 0
+            | acc <- res mod contents(lmc)
+            , neg <- (res div contents(lmc)) /= 0
          ))
 }
 
@@ -166,8 +169,8 @@ function subLMC_(lmc) {
      PRECONDITIONS: the LMC is not halted and the Data Zone is set
   */
   res := acc(lmc) - value(dz(lmc))
-  return (LMCForm (lmc | acc <- res mod 100
-                       , neg <- (res div 100) /= 0
+  return (LMCForm (lmc | acc <- res mod contents(lmc)
+                       , neg <- (res div contents(lmc)) /= 0
         ))
 }
 
@@ -279,7 +282,7 @@ function decodeInstruction_(lmc) {
   /* PURPOSE: describes the lmc after setting the Instruction Zone according to the opCode in the Working Zone
      PRECONDITIONS: the LMC is not halted and the Working Zone is set
   */
-  insCode := value(wz(lmc)) div 100
+  insCode := value(wz(lmc)) div contents(lmc)
   return (LMCForm(lmc | iz <- just(insCode)))
 }
 
@@ -289,7 +292,7 @@ function fetchData_(lmc) {
      PRECONDITIONS: the LMC is not halted and the Instruction Zone and Working Zone are set
   */
   insCode   := value(iz(lmc))
-  dataIndex := value(wz(lmc)) mod 100
+  dataIndex := value(wz(lmc)) mod contents(lmc)
   dataAddr  := decodeIndex_ForBounds_CalledBy_WhenDecoding_(dataIndex, bounds(lmc), "fetchData_", "dataIndex of opCode")
   data      := fetchPos_From_(dataAddr, mbs(lmc))
   return (LMCForm(lmc | 

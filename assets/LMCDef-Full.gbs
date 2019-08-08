@@ -71,16 +71,18 @@ function emptyLMCWithMemSize_AndMemWidth_(memSize, memWidth) {
 }
 
 
-function lmc_memContents(lmc) { return(mbs(model(lmc))) }
-function lmc_inpContents(lmc) { return(inp(model(lmc))) }
-function lmc_outContents(lmc) { return(out(model(lmc))) }
-function lmc_pc (lmc)         { return(pc (model(lmc))) }
-function lmc_acc(lmc)         { return(acc(model(lmc))) }
-function lmc_neg(lmc)         { return(neg(model(lmc))) }
-function lmc_wz (lmc)         { return(wz (model(lmc))) }
-function lmc_iz (lmc)         { return(iz (model(lmc))) }
-function lmc_dz (lmc)         { return(dz (model(lmc))) }
+function lmc_insBase    (lmc) { return(contents(model(lmc))) }
+function lmc_memContents(lmc) { return(mbs     (model(lmc))) }
+function lmc_inpContents(lmc) { return(inp     (model(lmc))) }
+function lmc_outContents(lmc) { return(out     (model(lmc))) }
+function lmc_pc (lmc)         { return(pc      (model(lmc))) }
+function lmc_acc(lmc)         { return(acc     (model(lmc))) }
+function lmc_neg(lmc)         { return(neg     (model(lmc))) }
+function lmc_wz (lmc)         { return(wz      (model(lmc))) }
+function lmc_iz (lmc)         { return(iz      (model(lmc))) }
+function lmc_dz (lmc)         { return(dz      (model(lmc))) }
 
+function lmc_memBounds(lmc)   { return(bounds(model(lmc)))                                         }
 function lmc_memSize(lmc)     { return(lmcModel_memSize(model(lmc)))                               }
 function lmc_totalHeight(lmc) { return(lmc_roomHeight(lmc)) /* The room occupies all the height */ }
 function lmc_totalWidth(lmc)  { // The total width occupied by the LMC
@@ -147,5 +149,27 @@ function lmc_lmRep(lmc) {
                 lmcRep_activeLM(representation(lmc)) otherwise)
 }
 
+function lmc_lmLoadedRep(lmc) {
+  return(choose lmcRep_loadedLM(representation(lmc)) when (not lmc_isHalted(lmc))
+                lmcRep_haltedLM(representation(lmc)) otherwise)
+}
+
 function lmc_inputFlow (lmc) { return(lmcPlace_inpFlow(placing(lmc))) }
 function lmc_outputFlow(lmc) { return(lmcPlace_outFlow(placing(lmc))) }
+
+function lmc_fetchInstruction(lmc)        { return (LMC(lmc | model <- fetchInstruction_       (model(lmc)))) }
+function lmc_decodeInstruction(lmc)       { return (LMC(lmc | model <- decodeInstruction_      (model(lmc)))) }
+function lmc_fetchData(lmc)               { return (LMC(lmc | model <- fetchData_              (model(lmc)))) }
+function lmc_incrementProgramCounter(lmc) { return (LMC(lmc | model <- incrementProgramCounter_(model(lmc)))) }
+function lmc_executeInstruction(lmc)      { return (LMC(lmc | model <- executeInstruction_     (model(lmc)))) }
+
+function lmc_halt(lmc)   { return (LMC(lmc | model <- haltLMC_  (model(lmc)))) }
+function lmc_input(lmc)  { return (LMC(lmc | model <- inputLMC_ (model(lmc)))) }
+function lmc_output(lmc) { return (LMC(lmc | model <- outputLMC_(model(lmc)))) }
+function lmc_add(lmc)    { return (LMC(lmc | model <- addLMC_   (model(lmc)))) }
+function lmc_sub(lmc)    { return (LMC(lmc | model <- subLMC_   (model(lmc)))) }
+function lmc_sta(lmc)    { return (LMC(lmc | model <- staLMC_   (model(lmc)))) }
+function lmc_lda(lmc)    { return (LMC(lmc | model <- ldaLMC_   (model(lmc)))) }
+function lmc_bra(lmc)    { return (LMC(lmc | model <- braLMC_   (model(lmc)))) }
+function lmc_brz(lmc)    { return (LMC(lmc | model <- brzLMC_   (model(lmc)))) }
+function lmc_brp(lmc)    { return (LMC(lmc | model <- brpLMC_   (model(lmc)))) }

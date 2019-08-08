@@ -69,6 +69,8 @@ procedure Sacar__Veces(color,     cantidad) { repeat (cantidad) { Sacar(color)  
 /*@ATTRIBUTE@atomic@*/
 procedure Mover__Veces(dirección, cantidad) { repeat (cantidad) { Mover(dirección) } }
 
+procedure SacarTodas(color) { Sacar__Veces(color, nroBolitas(color)) }
+
 /*@ATTRIBUTE@atomic@*/
 procedure MoverHacia__Veces(dirección, cantidad) {
   if (cantidad >= 0) 
@@ -79,6 +81,11 @@ procedure MoverHacia__Veces(dirección, cantidad) {
 function nroBolitas_Al_(color, dir) { 
   Mover(dir)
   return (nroBolitas(color))
+}
+
+function hayBolitas_Al_(color, dir) { 
+  Mover(dir)
+  return (hayBolitas(color))
 }
 
 function lengthOfLine_InDir_(color, dir) {
@@ -239,6 +246,10 @@ procedure PasarASiguienteCeldaDeRecorrido__(dirPpal, dirSec) {
 //----------------------------------------------------------
 // Finding a cell with some number of stones of 1 color
 //----------------------------------------------------------
+function hayUnaCeldaConExactamente_Bolitas_EnRecorrido__(cant,color,dirPpal,dirSec) {
+  return (hayUnaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant,color,cant,color,dirPpal,dirSec))
+}
+
 procedure EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(cant,color,dirPpal,dirSec) {
   // Asking for the same color twice is the same as asking once, because (&&) is idempotent
   EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant,color,cant,color,dirPpal,dirSec)

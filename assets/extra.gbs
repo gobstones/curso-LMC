@@ -54,6 +54,7 @@ procedure PonerEmptyLMCWithMemSize_AndMemWidth_(memSize, memWidth) {
   PonerLMC_(emptyLMCWithMemSize_AndMemWidth_(memSize, memWidth))
 }
 
+/*@ATTRIBUTE@atomic@*/
 /*@ATTRIBUTE@block_name@Poner LMC _@*/
 procedure PonerLMC_(lmc) {
   VaciarTablero()
@@ -117,18 +118,24 @@ procedure LMC_DibujarElementos(lmc) {
   LMC_PonerSlot_Towards_At_               (lmc, lmc_outRep(lmc), lmc_outputFlow(lmc)      , lmc_absoluteOUTplace(lmc))
 }
 
+/*@ATTRIBUTE@atomic@*/
 procedure LMC_DibujarInputContents(lmc) {
+  initialCoord := coordActual()
   IrACoord_(lmc_absoluteINPplace(lmc))
   LMC_Poner_ElementosDeLaLista_ConElPrimeroHacia_(lmc, lmc_totalHeight(lmc)
                                                      , lmc_inpContents(lmc)
                                                      , opuesto(lmc_inputFlow(lmc)))
+  IrACoord_(initialCoord)                                                  
 }
 
+/*@ATTRIBUTE@atomic@*/
 procedure LMC_DibujarOutputContents(lmc) {
+  initialCoord := coordActual()
   IrACoord_(lmc_absoluteOUTplace(lmc))
   LMC_Poner_ElementosDeLaLista_ConElPrimeroHacia_(lmc, lmc_totalHeight(lmc)
-                                                     , lmc_outContents(lmc)
+                                                     , reversed(lmc_outContents(lmc))
                                                      , opuesto(lmc_outputFlow(lmc)))
+  IrACoord_(initialCoord)                                                  
 }
 
 procedure LMC_DibujarLittleMan(lmc) {
@@ -141,7 +148,7 @@ procedure LMC_DibujarLittleMan(lmc) {
 //----------------------------------------------------------
 procedure LMC_DibujarLado_DeLongitud_(lmc, dir, long) {
   LMC_DibujarLaEsquina_(lmc, dir)
-  LMC_DibujarParedRectaDeLongitud_Al_(lmc, long-1, dir)
+  LMC_DibujarParedRectaDeLongitud_EnLaCara_(lmc, long-1, dir)
 }
 
 procedure LMC_DibujarLaEsquina_(lmc, dir) {
@@ -150,8 +157,8 @@ procedure LMC_DibujarLaEsquina_(lmc, dir) {
 }
 
 /*@ATTRIBUTE@atomic@*/
-procedure LMC_DibujarParedRectaDeLongitud_Al_(lmc, long, dir) {
-  wallRep := lmc_straigthWallRepInDir_(lmc, dir) // Stored for efficiency during the repetition
+procedure LMC_DibujarParedRectaDeLongitud_EnLaCara_(lmc, long, dir) {
+  wallRep := lmc_straigthWallRepInDir_(lmc, siguiente(dir)) // Stored for efficiency during the repetition
   repeat (long) {
     LMC_PonerElemento_(lmc, wallRep)
     Mover(siguiente(dir)) 
@@ -181,7 +188,7 @@ procedure LMC_PonerElemento_ConContenido_En_Desde_(lmc, element, content, destin
 }
 
 procedure LMC_Poner_ElementosDeLaLista_ConElPrimeroHacia_(lmc, cant, list, dir) {
-  elementosQueFaltan  := take_ElemsFrom_(min(cant, length(list)), list)
+  elementosQueFaltan  := padList_To_With_(list, cant, 0)
   if (not esVacía(elementosQueFaltan)) {
     // The first element, on the slot
     LMC_PonerContenido_(lmc, primero(elementosQueFaltan))
@@ -211,6 +218,7 @@ procedure LMC_PonerContenido_(lmc, content) {
 procedure LMC_PonerElemento_(lmc, elemRep) {
   /* OBSERVATION: lmc is given only to have a uniform interface */
   let (color, value) := elemRep
+  SacarTodas(color)
   Poner__Veces(color, value)
 }
 //===============================================================
@@ -229,7 +237,13 @@ procedure LMC_PonerElemento_(lmc, elemRep) {
 
 //----------------------------------------------------------
 // Reading of an LMC from the board
+//    function currentLMCBasedOn_(lmc)
+//    function currentLMCWithRep_(lmcRep)
 //----------------------------------------------------------
+function currentLMCBasedOn_(lmc) {
+  return(currentLMCWithRep_(representation(lmc)))
+}
+
 function currentLMCWithRep_(lmcRep) {
   /* PRECONDITION: there is an LMC represented on the board following the given representation
      OBSERVATIONS:
@@ -347,6 +361,8 @@ function memRowContentsWithRep_(lmcRep) {
 function inputDataWithRep_(lmcRep) {
   let (wallColor, wallCant) := lmcRep_straigthWallInDir_(lmcRep, Norte)
   let (inpColor , inpCant)  := inp(lmcRep)
+  Assert_OrFailWith_(hayUnaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(inpCant,inpColor,wallCant,wallColor,Norte,Este)
+                    ,"The LMC is malformed -- I cannot find the input slot")
   EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(inpCant ,inpColor
                                                                 ,wallCant,wallColor
                                                                 ,Norte,Este)
@@ -360,45 +376,51 @@ function inputDataWithRep_(lmcRep) {
 function outputDataWithRep_(lmcRep) {
   let (wallColor, wallCant) := lmcRep_straigthWallInDir_(lmcRep, Norte)
   let (outColor , outCant)  := out(lmcRep)
+  Assert_OrFailWith_(hayUnaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(outCant,outColor,wallCant,wallColor,Norte,Este)
+                    ,"The LMC is malformed -- I cannot find the output slot")
   EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(outCant ,outColor
                                                                 ,wallCant,wallColor
                                                                 ,Norte,Este)
   possibleOutDirs := direccionesHacia_Bolitas_Vecinas(outCant, outColor) 
   Assert_OrFailWith_(length(possibleOutDirs)==1, "The output has not a right shape -- there should be a slot with two adjacents cells for output")
   outDir          := primero(possibleOutDirs)
-  outContents := ioContentsWithRep_To_(lmcRep, outDir)
+  outContents     := reversed(ioContentsWithRep_To_(lmcRep, outDir))
   return (outDir, outContents, coordActual())
 
 }
 
 function ioContentsWithRep_To_(lmcRep, dirOfSecondElem) {
   contentsColor   := aux_colorOf_(contents(lmcRep))
+  wallColor       := aux_colorOf_(bounds(lmcRep))
   ioContentsSoFar := []
-  if (nroBolitas(contentsColor) > 0) { 
-    // First element is separated from the rest
+  // First element is separated from the rest
+  ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] 
+  Mover(dirOfSecondElem)
+  // The remaining elements, if they exist
+  while (puedeMover(Norte) && hayBolitas_Al_(wallColor, opuesto(dirOfSecondElem))) {
     ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] 
-    Mover(dirOfSecondElem)
-    // The remaining elements, if they exist
-    while (nroBolitas(contentsColor)>0 && puedeMover(Norte)) {
-      ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] 
-      Mover(Norte)
-    }
-    // Border case (when it reaches the North border)
-    if (not puedeMover(Norte) && nroBolitas(contentsColor)>0) 
-      { ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ]}
+    Mover(Norte)
   }
-  return (ioContentsSoFar)
+  // Border case (when it reaches the North border)
+  if (not puedeMover(Norte) && hayBolitas_Al_(wallColor, opuesto(dirOfSecondElem))) 
+    { ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] }
+  return (trim_OfTrailing_(ioContentsSoFar,0))
 }
 
 //----------------------------------------------------------
 //----------------------------------------------------------
 function lmDataWithRep_(lmcRep) {
+  /* PRECONDITION: The LMC is not in an intermediate step (with LM loaded) */
   let (lmColor , lmActiveCant) := lmcRep_activeLM(lmcRep)
+  let (lmColor , lmLoadedCant) := lmcRep_loadedLM(lmcRep)
   let (lmColor', lmHaltedCant) := lmcRep_haltedLM(lmcRep)
-  EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(lmActiveCant, lmColor, Norte, Este)
+  EncontrarPrimeraCeldaConExactamente_Bolitas_EnRecorrido__(lmActiveCant, lmColor, Norte, Este)
   if (nroBolitas(lmColor)/=lmActiveCant) {
+    Assert_OrFailWith_(not hayUnaCeldaConExactamente_Bolitas_EnRecorrido__(lmLoadedCant,lmColor,Norte,Este)
+                      ,"The LMC cannot be read -- little man is loaded")     
+    Assert_OrFailWith_(hayUnaCeldaConExactamente_Bolitas_EnRecorrido__(lmHaltedCant,lmColor,Norte,Este)
+                      ,"The LMC is not complete -- little man is not present")     
     EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(lmHaltedCant, lmColor, Norte, Este)
-    Assert_OrFailWith_(nroBolitas(lmColor)==lmHaltedCant, "The LMC is not complete -- little man is not present")     
   }
   return (nroBolitas(lmColor)==lmActiveCant, coordActual())
 }
@@ -421,6 +443,429 @@ function elemContentsWithRep___(elemRep, contentsColor, errMsg) {
 
 //===============================================================
 //===============================================================
+//==== LMC Board Animated Execution
+//===============================================================
+//===============================================================
+// REQUIRES: GobstonesAmenities
+// REQUIRES: GobstonesLists
+// REQUIRES: LMCDef-Form
+// REQUIRES: LMCDef-FM-Mem
+// REQUIRES: LMCDef-F-Model
+// REQUIRES: LMCDef-F-BoardRep
+// REQUIRES: LMCDef-F-BoardPlace
+// REQUIRES: LMCDef-Full
+
+/*@ATTRIBUTE@blockName@Execute LMC program one step, based on _@*/
+procedure ExecuteLMCProgramOneStepBasedOn_(lmc) {
+  currentLMC := currentLMCBasedOn_(lmc)
+  newLMC     := lmc_executeProgramOneStep(currentLMC)
+  PonerLMC_(newLMC)
+  // lmcRep     := representation(lmc)
+  // FetchInstructionOnBoardWithRep_(lmcRep)
+  // DecodeInstructionOnBoardWithRep_(lmcRep)
+  // FetchDataOnBoardWithRep_(lmcRep)
+  // IncrementProgramCounterOnBoardWithRep_(lmcRep)
+  // ExecuteInstructionOnBoardWithRep_(lmcRep)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+/*@ATTRIBUTE@blockName@Animate LMC program one step, based on _@*/
+procedure AnimateLMCProgramOneStepBasedOn_(lmc) {
+  /* PRECONDITION: the LMC on the board is not halted
+     OBSERVATION: individual operations of animation assume the LMC received 
+       is synchronized with the one on the board. Thus, functions advancing the 
+       LMC should be interleaved with animation.
+  */
+  currentLMC := currentLMCBasedOn_(lmc)
+  Assert_OrFailWith_(not lmc_isHalted(lmc), "LMC is halted -- cannot execute a program step")
+  FetchInstructionOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_fetchInstruction(currentLMC)
+  DecodeInstructionOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_decodeInstruction(currentLMC)
+  FetchDataOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_fetchData(currentLMC)
+  IncrementProgramCounterOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_incrementProgramCounter(currentLMC)
+  ExecuteInstructionOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_executeInstruction(currentLMC)
+}
+
+//-------------------------------
+// LMC inner working, animated
+//   (all functions assume as Inv.Rep. an LMC represented on the board,
+//    and the parameter synchronized with it)
+//-------------------------------
+/*@ATTRIBUTE@nonatomic@*/
+procedure FetchInstructionOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC on board while LM set the Working Zone according to the MailBox value given by the Program Counter
+     PRECONDITIONS: the LMC is not halted, head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to PC, just in case
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Reads the PC contents, and brings the LM to the right MailBox
+     memPos   := decodeIndex_ForBounds_CalledBy_WhenDecoding_(lmc_pc(lmc), lmc_memBounds(lmc), "FetchInstructionOnBoard", "PC")
+     BringLM_ToCoord_HV(lmRep, displace_From_(memPos, lmc_absoluteMBSplace(lmc)))
+ // Reads the MailBox, and brings the LM to the WZ
+     ChangeLMTo_(lmLoadedRep)
+     wzContents := fetchPos_From_(memPos, lmc_memContents(lmc))
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteWZplace(lmc)))
+ // Unloads the contents on the WZ
+     Put_OnRegisterBelowWithRepAsLMC_(wzContents, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure DecodeInstructionOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC on board while LM set the Instruction Zone according to the opCode in the Working Zone
+     PRECONDITIONS: the LMC is not halted, the Working Zone is set and head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to WZ, just in case
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteWZplace(lmc)))
+ // Reads the WZ contents, and brings the LM to the IZ
+     ChangeLMTo_(lmLoadedRep)
+     Assert_OrFailWith_(isJust_(lmc_wz(lmc)), "The Working Zone is not set -- the LMC given as argument is not syncronized with that on the board when decoding instruction")
+     izContents := value(lmc_wz(lmc)) div lmc_insBase(lmc)
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteIZplace(lmc)))
+ // Unloads the contents on the IZ
+     Put_OnRegisterBelowWithRepAsLMC_(izContents, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure FetchDataOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC on board while LM set the Data Zone according to the data source of 
+              the instruction in the Instruction Zone and the Working Zone
+     PRECONDITIONS: the LMC is not halted, the Instruction Zone and Working Zone are set, and the head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to WZ
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteWZplace(lmc)))
+ // Reads the WZ contents, and if corresponds, brings the LM to the place indicated by the opCode there
+     ChangeLMTo_(lmLoadedRep)
+     Assert_OrFailWith_(isJust_(lmc_iz(lmc)), "The Instruction Zone is not set -- the LMC given as argument is not syncronized with that on the board when fetching data")
+     insCode   := value(lmc_iz(lmc))
+     Assert_OrFailWith_(isJust_(lmc_wz(lmc)), "The Working Zone is not set -- the LMC given as argument is not syncronized with that on the board when fetching data")
+     dataIndex := value(lmc_wz(lmc)) mod lmc_insBase(lmc)
+     if (usesMem_(insCode)) {
+            ChangeLMTo_(lmRep)
+            dataAddr := decodeIndex_ForBounds_CalledBy_WhenDecoding_(dataIndex, lmc_memBounds(lmc), "FetchDataOnBoard", "dataIndex of opCode")
+            data     := fetchPos_From_(dataAddr, lmc_memContents(lmc))
+            BringLM_ToCoord_HV(lmRep, displace_From_(dataAddr, lmc_absoluteMBSplace(lmc)))
+            ChangeLMTo_(lmLoadedRep)
+          } 
+     else { data := dataIndex }
+ // Brings the LM to the DZ, and unloads the data on the DZ
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(data, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure IncrementProgramCounterOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC on board while LM increments the Program Counter
+     PRECONDITIONS: the LMC is not halted, and the head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to PC, just in case
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Reads the PC contents, increments it by one, and put it back
+     Put_OnRegisterBelowWithRepAsLMC_(lmc_pc(lmc)+1, lmc)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure ExecuteInstructionOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC while the LM executes the instruction given by the Instruction Zone
+                (includes unsetting WZ, IZ and DZ as the last step)
+     PRECONDITIONS: the LMC is not halted, the Instruction Zone and Data Zone are set, 
+                    and the head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Goes to the IZ to determine which instruction has to be exectued
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absoluteIZplace(lmc)))
+     switch (value(lmc_iz(lmc))) {
+        0 -> { AnimatesLMC_Halt(lmc) }
+        1 -> { AnimatesLMC_ADD(lmc)  }
+        2 -> { AnimatesLMC_SUB(lmc)  }
+        3 -> { AnimatesLMC_STA(lmc)  }
+        5 -> { AnimatesLMC_LDA(lmc)  }
+        6 -> { AnimatesLMC_BRA(lmc)  }
+        7 -> { AnimatesLMC_BRZ(lmc)  }
+        8 -> { AnimatesLMC_BRP(lmc)  }
+        9 -> { AnimatesLMC_E_S(lmc)  }
+        _ -> { BOOM("Instruction not recognized in ExecuteInstruction -- review the program loaded") }
+     }
+     if (value(lmc_iz(lmc))/=0) {
+       AnimatesResetInstructionsWithRepAsLMC_(lmc)
+     }
+}  
+//----------------------------------------------------------
+
+//-------------------------------
+// LMC instruction execution inner working, animated
+//   (all functions assume as Inv.Rep. an LMC represented on the board,
+//    and the parameter synchronized with it)
+//-------------------------------
+procedure AnimatesResetInstructionsWithRepAsLMC_(lmc) {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Goes to each of the registers and reset them
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absoluteWZplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(0, lmc)
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absoluteIZplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(0, lmc)
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(0, lmc)
+ // Brings the LM to the PC, as a base point
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+}
+
+procedure AnimatesLMC_Halt(lmc) {
+  /* PRECONDITION: head is on LM representation */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the PC and instructs him to halt
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+     LMC_PonerElemento_(lmc, lmc_lmRep(lmc_halt(lmc)))
+}
+
+procedure AnimatesLMC_ADD(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the DZ an reads it
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     let val := value(lmc_dz(lmc))
+     ChangeLMTo_(lmLoadedRep)
+  // Brings the LM to the ACC, adds, and checks for overflow
+     newLMC := lmc_add(lmc)
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(lmc_acc(newLMC), newLMC)
+     if (lmc_neg(newLMC)) {
+       BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absoluteNEGplace(lmc)))
+       Put_OnRegisterBelowWithRepAsLMC_(bool2num(lmc_neg(lmc)), newLMC)
+     }
+     ChangeLMTo_(lmRep)
+}
+
+procedure AnimatesLMC_SUB(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the DZ an reads it
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     let val := value(lmc_dz(lmc))
+     ChangeLMTo_(lmLoadedRep)
+  // Brings the LM to the ACC, adds, and checks for overflow
+     newLMC := lmc_sub(lmc)
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(lmc_acc(newLMC), newLMC)
+     if (lmc_neg(newLMC)) {
+       BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absoluteNEGplace(lmc)))
+       Put_OnRegisterBelowWithRepAsLMC_(bool2num(lmc_neg(lmc)), newLMC)
+     }
+     ChangeLMTo_(lmRep)
+}
+
+procedure AnimatesLMC_STA(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Reads the DZ contents, and brings the LM to the ACC, for reading
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     memPos   := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(lmc_dz(lmc)), lmc_memBounds(lmc), "AnimatesLMC_STA", "DZ")
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+ // Reads the ACC, and brings the LM to the proper Mailbox
+     ChangeLMTo_(lmLoadedRep)
+     value := lmc_acc(lmc)
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_(memPos, lmc_absoluteMBSplace(lmc)))
+ // Unloads the contents on the Mailbox
+     LMC_PonerContenido_(lmc, value)
+     ChangeLMTo_(lmRep)
+}
+
+procedure AnimatesLMC_LDA(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Reads the DZ contents, and brings the LM to the right MailBox
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     memPos   := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(lmc_dz(lmc)), lmc_memBounds(lmc), "AnimatesLMC_STA", "DZ")
+     BringLM_ToCoord_HV(lmRep, displace_From_(memPos, lmc_absoluteMBSplace(lmc)))
+ // Reads the MailBox, and brings the LM to the ACC
+     ChangeLMTo_(lmLoadedRep)
+     value := fetchPos_From_(memPos, lmc_memContents(lmc))
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+ // Unloads the contents on the ACC
+     Put_OnRegisterBelowWithRepAsLMC_(value, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+procedure AnimatesLMC_BRA(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Reads the DZ contents, and brings the LM to the right MailBox
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     ChangeLMTo_(lmLoadedRep)
+     newPC := value(lmc_dz(lmc))
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Unloads the contents on the PC
+     Put_OnRegisterBelowWithRepAsLMC_(newPC, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+procedure AnimatesLMC_BRZ(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Reads the ACC contents, to determine if a jump have to be done
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+     if (lmc_acc(lmc) == 0) {
+ // Reads the DZ contents, and brings the LM to the right MailBox
+       BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+       ChangeLMTo_(lmLoadedRep)
+       newPC := value(lmc_dz(lmc))
+       BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Unloads the contents on the PC
+       Put_OnRegisterBelowWithRepAsLMC_(newPC, lmc)
+       ChangeLMTo_(lmRep)
+     }
+}
+
+procedure AnimatesLMC_BRP(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Reads the ACC contents, to determine if a jump have to be done
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteNEGplace(lmc)))
+     if (not lmc_neg(lmc)) {
+ // Reads the DZ contents, and brings the LM to the right MailBox
+       BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+       ChangeLMTo_(lmLoadedRep)
+       newPC := value(lmc_dz(lmc))
+       BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Unloads the contents on the PC
+       Put_OnRegisterBelowWithRepAsLMC_(newPC, lmc)
+       ChangeLMTo_(lmRep)
+     }
+}
+
+procedure AnimatesLMC_E_S(lmc)  {
+  /* PRECONDITIONS: the LMC is not halted, the Data Zone is set,
+                    and the head is on LM representation 
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings LM to the DZ to decide where to go next
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     if     (value(lmc_dz(lmc)) == 1)   { AnimatesLMC_Input (lmc) } 
+     elseif (value(lmc_dz(lmc)) == 2)   { AnimatesLMC_Output(lmc) }
+     else { BOOM("Bad address in E/S instruction -- it must be either 1 or 2 (that is, insCode 901 o 902)") }
+}
+
+procedure AnimatesLMC_Input(lmc) {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the INP slot
+     BringLM_ToCoord_HV(lmRep, displace_From_((1,0), lmc_absoluteINPplace(lmc)))
+ // Reads the input, and changes the input data
+     newLMC := lmc_input(lmc)
+     let val := lmc_acc(newLMC)
+     ChangeLMTo_(lmLoadedRep)
+     LMC_DibujarInputContents(newLMC)
+ // Brings the LM to the ACC and set it
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(val, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+procedure AnimatesLMC_Output(lmc) {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the ACC slot
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+ // Reads the ACC
+     newLMC := lmc_output(lmc)
+     let val := último(lmc_outContents(newLMC))
+     ChangeLMTo_(lmLoadedRep)
+ // Brings the LM to the OUT and changes the output data
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_((-1,0), lmc_absoluteOUTplace(lmc)))
+     LMC_DibujarOutputContents(newLMC)
+     ChangeLMTo_(lmRep)  
+}
+
+//-------------------------------
+// LM movement, animated
+//   (all functions assume as Inv.Rep. an LMC represented on the board, with the representation of the parameter)
+//-------------------------------
+/*@ATTRIBUTE@nonatomic@*/
+procedure BringLM_ToCoord_HV(lmRep,coord) {
+  /* PRECONDITION: the head is on the LM, he is not halted, and coord is inside the board */
+  here := coordActual()
+  let (dx, dy) := relativize_WRT_(coord, here)
+  MoveLM_InDir__Times(lmRep, Este,  dx)
+  MoveLM_InDir__Times(lmRep, Norte, dy)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure BringLM_ToCoord_VH(lmRep,coord) {
+  /* PRECONDITION: the head is on the LM, he is not halted, and coord is inside the board */
+  here := coordActual()
+  let (dx, dy) := relativize_WRT_(coord, here)
+  MoveLM_InDir__Times(lmRep, Norte, dy)
+  MoveLM_InDir__Times(lmRep, Este,  dx)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure MoveLM_InDir__Times(lmRep, dir, cant) {
+  /* PRECONDITION: the head is on the LM, he is not halted, and there is enough cells in the given direction */
+  let (lmColor, lmCant) := lmRep
+  if (cant >= 0) 
+       { repeat (cant)          { MoveLM_To_(lmRep, dir)          } }
+  else { repeat (opuesto(cant)) { MoveLM_To_(lmRep, opuesto(dir)) } }
+}
+
+/*@ATTRIBUTE@atomic@*/
+procedure MoveLM_To_(lmRep, dir) {
+  /* PRECONDITION: the head is on the LM, he is not halted, and there is a cell in the given direction */
+  let (lmColor, lmCant) := lmRep
+  Sacar__Veces(lmColor, lmCant)
+  Mover(dir)
+  Poner__Veces(lmColor, lmCant)
+}
+
+/*@ATTRIBUTE@atomic@*/
+procedure ChangeLMTo_(lmRep) {
+  let (lmColor, lmCant) := lmRep
+  SacarTodas(lmColor)
+  Poner__Veces(lmColor, lmCant)
+}
+
+/*@ATTRIBUTE@atomic@*/
+procedure Put_OnRegisterBelowWithRepAsLMC_(contents, lmc) {
+  Mover(Sur)
+  LMC_PonerContenido_(lmc, contents)
+  Mover(Norte)
+}
+//===============================================================
+//===============================================================
 //==== LMC Programs
 //===============================================================
 //===============================================================
@@ -432,9 +877,11 @@ function elemContentsWithRep___(elemRep, contentsColor, errMsg) {
 //  bra    6  //  brz    7  //  brp    8
 //  e_s    9
 //-------------------------------
-function copyInpToOut()        { return([901, 704, 902, 600])           }
-function accumulatesInpToOut() { return([901, 710, 109, 309, 902, 600]) }
-//===============================================================
+function oneInpToOut()         { return([901, 902                    ]) }
+function theInpPlusTwo()       { return([901, 104, 902,   0,   2     ]) }
+function foreverInc()          { return([103, 600,   0,   1          ]) }
+function copyInpToOut()        { return([901, 704, 902, 600          ]) }
+function accumulatesInpToOut() { return([901, 710, 109, 309, 902, 600]) }//===============================================================
 //===============================================================
 //==== LMC definition with all the information needed
 //====     A LMC is composed by a model, a way to represent each of its elements, and the placing of elements in a board
@@ -507,16 +954,18 @@ function emptyLMCWithMemSize_AndMemWidth_(memSize, memWidth) {
 }
 
 
-function lmc_memContents(lmc) { return(mbs(model(lmc))) }
-function lmc_inpContents(lmc) { return(inp(model(lmc))) }
-function lmc_outContents(lmc) { return(out(model(lmc))) }
-function lmc_pc (lmc)         { return(pc (model(lmc))) }
-function lmc_acc(lmc)         { return(acc(model(lmc))) }
-function lmc_neg(lmc)         { return(neg(model(lmc))) }
-function lmc_wz (lmc)         { return(wz (model(lmc))) }
-function lmc_iz (lmc)         { return(iz (model(lmc))) }
-function lmc_dz (lmc)         { return(dz (model(lmc))) }
+function lmc_insBase    (lmc) { return(contents(model(lmc))) }
+function lmc_memContents(lmc) { return(mbs     (model(lmc))) }
+function lmc_inpContents(lmc) { return(inp     (model(lmc))) }
+function lmc_outContents(lmc) { return(out     (model(lmc))) }
+function lmc_pc (lmc)         { return(pc      (model(lmc))) }
+function lmc_acc(lmc)         { return(acc     (model(lmc))) }
+function lmc_neg(lmc)         { return(neg     (model(lmc))) }
+function lmc_wz (lmc)         { return(wz      (model(lmc))) }
+function lmc_iz (lmc)         { return(iz      (model(lmc))) }
+function lmc_dz (lmc)         { return(dz      (model(lmc))) }
 
+function lmc_memBounds(lmc)   { return(bounds(model(lmc)))                                         }
 function lmc_memSize(lmc)     { return(lmcModel_memSize(model(lmc)))                               }
 function lmc_totalHeight(lmc) { return(lmc_roomHeight(lmc)) /* The room occupies all the height */ }
 function lmc_totalWidth(lmc)  { // The total width occupied by the LMC
@@ -583,8 +1032,30 @@ function lmc_lmRep(lmc) {
                 lmcRep_activeLM(representation(lmc)) otherwise)
 }
 
+function lmc_lmLoadedRep(lmc) {
+  return(choose lmcRep_loadedLM(representation(lmc)) when (not lmc_isHalted(lmc))
+                lmcRep_haltedLM(representation(lmc)) otherwise)
+}
+
 function lmc_inputFlow (lmc) { return(lmcPlace_inpFlow(placing(lmc))) }
 function lmc_outputFlow(lmc) { return(lmcPlace_outFlow(placing(lmc))) }
+
+function lmc_fetchInstruction(lmc)        { return (LMC(lmc | model <- fetchInstruction_       (model(lmc)))) }
+function lmc_decodeInstruction(lmc)       { return (LMC(lmc | model <- decodeInstruction_      (model(lmc)))) }
+function lmc_fetchData(lmc)               { return (LMC(lmc | model <- fetchData_              (model(lmc)))) }
+function lmc_incrementProgramCounter(lmc) { return (LMC(lmc | model <- incrementProgramCounter_(model(lmc)))) }
+function lmc_executeInstruction(lmc)      { return (LMC(lmc | model <- executeInstruction_     (model(lmc)))) }
+
+function lmc_halt(lmc)   { return (LMC(lmc | model <- haltLMC_  (model(lmc)))) }
+function lmc_input(lmc)  { return (LMC(lmc | model <- inputLMC_ (model(lmc)))) }
+function lmc_output(lmc) { return (LMC(lmc | model <- outputLMC_(model(lmc)))) }
+function lmc_add(lmc)    { return (LMC(lmc | model <- addLMC_   (model(lmc)))) }
+function lmc_sub(lmc)    { return (LMC(lmc | model <- subLMC_   (model(lmc)))) }
+function lmc_sta(lmc)    { return (LMC(lmc | model <- staLMC_   (model(lmc)))) }
+function lmc_lda(lmc)    { return (LMC(lmc | model <- ldaLMC_   (model(lmc)))) }
+function lmc_bra(lmc)    { return (LMC(lmc | model <- braLMC_   (model(lmc)))) }
+function lmc_brz(lmc)    { return (LMC(lmc | model <- brzLMC_   (model(lmc)))) }
+function lmc_brp(lmc)    { return (LMC(lmc | model <- brpLMC_   (model(lmc)))) }
 //===============================================================
 //===============================================================
 //==== LMC basic Form for representation
@@ -655,7 +1126,7 @@ function lmcRepresentation() {
   return (LMCForm(contents <- (Azul ,  0)             // The numeric CONTENTS of mailboxes; any number will do
                 , bounds   <- (Rojo , [1,2,3,4,5,6])  // The BOUNDS are walls representation (Vertical, Horizontal, NO(N), NE(E), SE(S), SO(O)
                 , inp      <- (Negro,  2)             // The INPut place representation
-                , lm       <- (Verde, [ 11, 1 ])      // The Little Man representation (Halted, Active)
+                , lm       <- (Verde, [ 11, 1, 2 ])   // The Little Man representation (Halted, Active, Loaded)
                 , pc       <- (Negro, 10)             // The Program Counter place representation
                 , acc      <- (Negro, 11)             // The Accumulator place representation
                 , neg      <- (Negro, 12)             // The NEGative flag place representation
@@ -693,6 +1164,12 @@ function lmcRep_activeLM(lmRep) {
   let (color, valores) := lm(lmRep)
   return (color, segundo(valores))
 }
+
+function lmcRep_loadedLM(lmRep) {
+  let (color, valores) := lm(lmRep)
+  return (color, tercero(valores))
+}
+
 //----------------------------------------------------------
 
 //----------------------------------------------------------
@@ -944,9 +1421,10 @@ function emptyLMCModelWithMemSize_AndMemWidth_(memSize, memWidth) {
      PRECONDITIONS:
        * memSize (the number of MailBoxeS) is <= 100
   */
-  Assert_OrFailWith_(memSize <= 100, "Memory too big in emptyLMC -- it must be <= 100")
+  instructionBase := 100
+  Assert_OrFailWith_(memSize <= instructionBase, "Memory too big in emptyLMC -- it must be <= 100")
   let myBounds := (memSize, memWidth)
-  return (LMCForm(contents <- 100                   // The base to separate instructions from data
+  return (LMCForm(contents <- instructionBase       // The base to separate instructions from data
                 , bounds   <- myBounds              // The BOUNDS are the number of available mailboxes, and the width of a row
                 , inp      <- []                    // The INPut is initially empty
                 , lm       <- True                  // The Little Man starts active
@@ -999,12 +1477,14 @@ function lmcModel_executeProgram_Steps(lmc, cant) {
 }
 
 function lmcModel_executeProgramOneStep(lmc) {
-  return(executeInstruction_      (
-         incrementProgramCounter_(    // If this is done after executing the instruction, the PC is not right
-         fetchData_             (
-         decodeInstruction_    (
-         fetchInstruction_(lmc)))))
-        )                  
+  return(choose
+          executeInstruction_      (
+          incrementProgramCounter_(    // If this is done after executing the instruction, the PC is not right
+          fetchData_             (
+          decodeInstruction_    (
+          fetchInstruction_(lmc))))) when (not aux_lmcModel_isHalted(lmc))
+          lmc                        otherwise
+        ) 
 }
 
 function lmcModel_inspectDebugAtStep_(lmc, step) {
@@ -1013,7 +1493,7 @@ function lmcModel_inspectDebugAtStep_(lmc, step) {
     lmcToSee := fetchData_             (
          decodeInstruction_    (
          fetchInstruction_(lmcToSee)))
-    dataAddr := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(wz(lmcToSee)) mod 100, bounds(lmcToSee), "lmcModel_inspectDebugAtStep_", "WZ")
+    dataAddr := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(wz(lmcToSee)) mod contents(lmc), bounds(lmcToSee), "lmcModel_inspectDebugAtStep_", "WZ")
     return(value(wz(lmcToSee)), value(iz(lmcToSee))
           , dataAddr
           , fetchPos_From_(dataAddr, mbs(lmcToSee))
@@ -1051,8 +1531,8 @@ function addLMC_(lmc) {
   */
   res := acc(lmc) + value(dz(lmc))
   return (LMCForm (lmc 
-            | acc <- res mod 100
-            , neg <- (res div 100) /= 0
+            | acc <- res mod contents(lmc)
+            , neg <- (res div contents(lmc)) /= 0
          ))
 }
 
@@ -1061,8 +1541,8 @@ function subLMC_(lmc) {
      PRECONDITIONS: the LMC is not halted and the Data Zone is set
   */
   res := acc(lmc) - value(dz(lmc))
-  return (LMCForm (lmc | acc <- res mod 100
-                       , neg <- (res div 100) /= 0
+  return (LMCForm (lmc | acc <- res mod contents(lmc)
+                       , neg <- (res div contents(lmc)) /= 0
         ))
 }
 
@@ -1174,7 +1654,7 @@ function decodeInstruction_(lmc) {
   /* PURPOSE: describes the lmc after setting the Instruction Zone according to the opCode in the Working Zone
      PRECONDITIONS: the LMC is not halted and the Working Zone is set
   */
-  insCode := value(wz(lmc)) div 100
+  insCode := value(wz(lmc)) div contents(lmc)
   return (LMCForm(lmc | iz <- just(insCode)))
 }
 
@@ -1184,7 +1664,7 @@ function fetchData_(lmc) {
      PRECONDITIONS: the LMC is not halted and the Instruction Zone and Working Zone are set
   */
   insCode   := value(iz(lmc))
-  dataIndex := value(wz(lmc)) mod 100
+  dataIndex := value(wz(lmc)) mod contents(lmc)
   dataAddr  := decodeIndex_ForBounds_CalledBy_WhenDecoding_(dataIndex, bounds(lmc), "fetchData_", "dataIndex of opCode")
   data      := fetchPos_From_(dataAddr, mbs(lmc))
   return (LMCForm(lmc | 
@@ -1311,8 +1791,8 @@ function decodeIndex_ForBounds_CalledBy_WhenDecoding_(index, bounds, caller, dat
   /* PRECONDITION: bounds is valid, 0 <= index < size
   */
   let (size, depth) := bounds
-  Assert_OrFailWith_(index < size, "Out of memory bounds at ") // ++ caller ++ " decoding " ++ dataSource)
-                                                               // Strings are not lists... :(
+  Assert_OrFailWith_(index < size, "Out of memory bounds") // at ") ++ caller ++ " decoding " ++ dataSource)
+                                                           //       Strings are not lists... :(
   let (x,y) := memShapeOf_(bounds)
   i := index mod x
   j := index div x
@@ -1354,12 +1834,28 @@ function setIndex_To_InRow_(idx, val, row) {
 //===============================================================
 
 function segundo(list)           { return (primero(sinElPrimero(list)))     }
+function tercero(list)           { return (segundo(sinElPrimero(list)))     }
 function sinLosDosPrimeros(list) { return(sinElPrimero(sinElPrimero(list))) }
+
+// function último(list) {
+//   elementosQueFaltan := list
+//   if (esVacía(elementosQueFaltan)) { BOOM("I cannot take the last element of an empty list") }
+//   while (not esVacía(sinElPrimero(elementosQueFaltan))) {
+//     elementosQueFaltan := sinElPrimero(elementosQueFaltan)
+//   }
+//   return (primero(elementosQueFaltan))
+// }
 
 function length(list) { 
   elemSeenSoFar := 0
   foreach elem in list { elemSeenSoFar := elemSeenSoFar + 1 }
   return (elemSeenSoFar)
+}
+
+function reversed(list) { 
+  elemsSoFar := []
+  foreach elem in list { elemsSoFar := [elem] ++ elemsSoFar }
+  return (elemsSoFar)
 }
 
 function elemAt_In_(idx, list) {
@@ -1417,7 +1913,20 @@ function combinadosDeAPares_Y_(list1, list2) {
   }
   return (paresVistos)
 }
-//===============================================================
+
+function trim_OfTrailing_(list, elemToTrim) {
+  elemsToReview := reversed(list)
+  while (not esVacía(elemsToReview) && primero(elemsToReview)==elemToTrim) {
+    elemsToReview := sinElPrimero(elemsToReview)
+  }
+  return(reversed(elemsToReview))
+}
+
+function padList_To_With_(list, cant, elem) {
+  return (choose   
+           take_ElemsFrom_(cant, list)                           when (cant < length(list))
+           list ++ elem_Replicado_Veces(elem, cant-length(list)) otherwise)
+}//===============================================================
 //===============================================================
 //==== Gobstones Amenities
 //===============================================================
@@ -1488,6 +1997,8 @@ procedure Sacar__Veces(color,     cantidad) { repeat (cantidad) { Sacar(color)  
 /*@ATTRIBUTE@atomic@*/
 procedure Mover__Veces(dirección, cantidad) { repeat (cantidad) { Mover(dirección) } }
 
+procedure SacarTodas(color) { Sacar__Veces(color, nroBolitas(color)) }
+
 /*@ATTRIBUTE@atomic@*/
 procedure MoverHacia__Veces(dirección, cantidad) {
   if (cantidad >= 0) 
@@ -1498,6 +2009,11 @@ procedure MoverHacia__Veces(dirección, cantidad) {
 function nroBolitas_Al_(color, dir) { 
   Mover(dir)
   return (nroBolitas(color))
+}
+
+function hayBolitas_Al_(color, dir) { 
+  Mover(dir)
+  return (hayBolitas(color))
 }
 
 function lengthOfLine_InDir_(color, dir) {
@@ -1658,6 +2174,10 @@ procedure PasarASiguienteCeldaDeRecorrido__(dirPpal, dirSec) {
 //----------------------------------------------------------
 // Finding a cell with some number of stones of 1 color
 //----------------------------------------------------------
+function hayUnaCeldaConExactamente_Bolitas_EnRecorrido__(cant,color,dirPpal,dirSec) {
+  return (hayUnaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant,color,cant,color,dirPpal,dirSec))
+}
+
 procedure EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(cant,color,dirPpal,dirSec) {
   // Asking for the same color twice is the same as asking once, because (&&) is idempotent
   EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(cant,color,cant,color,dirPpal,dirSec)

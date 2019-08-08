@@ -11,5 +11,8 @@
 //  bra    6  //  brz    7  //  brp    8
 //  e_s    9
 //-------------------------------
-function copyInpToOut()        { return([901, 704, 902, 600])           }
+function oneInpToOut()         { return([901, 902                    ]) }
+function theInpPlusTwo()       { return([901, 104, 902,   0,   2     ]) }
+function foreverInc()          { return([103, 600,   0,   1          ]) }
+function copyInpToOut()        { return([901, 704, 902, 600          ]) }
 function accumulatesInpToOut() { return([901, 710, 109, 309, 902, 600]) }

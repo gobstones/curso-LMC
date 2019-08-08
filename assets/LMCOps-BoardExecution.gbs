@@ -12,55 +12,412 @@
 // REQUIRES: LMCDef-F-BoardPlace
 // REQUIRES: LMCDef-Full
 
+/*@ATTRIBUTE@blockName@Execute LMC program one step, based on _@*/
+procedure ExecuteLMCProgramOneStepBasedOn_(lmc) {
+  currentLMC := currentLMCBasedOn_(lmc)
+  newLMC     := lmc_executeProgramOneStep(currentLMC)
+  PonerLMC_(newLMC)
+  // lmcRep     := representation(lmc)
+  // FetchInstructionOnBoardWithRep_(lmcRep)
+  // DecodeInstructionOnBoardWithRep_(lmcRep)
+  // FetchDataOnBoardWithRep_(lmcRep)
+  // IncrementProgramCounterOnBoardWithRep_(lmcRep)
+  // ExecuteInstructionOnBoardWithRep_(lmcRep)
+}
 
+/*@ATTRIBUTE@nonatomic@*/
+/*@ATTRIBUTE@blockName@Animate LMC program one step, based on _@*/
+procedure AnimateLMCProgramOneStepBasedOn_(lmc) {
+  /* PRECONDITION: the LMC on the board is not halted
+     OBSERVATION: individual operations of animation assume the LMC received 
+       is synchronized with the one on the board. Thus, functions advancing the 
+       LMC should be interleaved with animation.
+  */
+  currentLMC := currentLMCBasedOn_(lmc)
+  Assert_OrFailWith_(not lmc_isHalted(lmc), "LMC is halted -- cannot execute a program step")
+  FetchInstructionOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_fetchInstruction(currentLMC)
+  DecodeInstructionOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_decodeInstruction(currentLMC)
+  FetchDataOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_fetchData(currentLMC)
+  IncrementProgramCounterOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_incrementProgramCounter(currentLMC)
+  ExecuteInstructionOnBoardWithRepAsLMC_(currentLMC)
+  currentLMC := lmc_executeInstruction(currentLMC)
+}
+
+//-------------------------------
+// LMC inner working, animated
+//   (all functions assume as Inv.Rep. an LMC represented on the board,
+//    and the parameter synchronized with it)
+//-------------------------------
+/*@ATTRIBUTE@nonatomic@*/
+procedure FetchInstructionOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC on board while LM set the Working Zone according to the MailBox value given by the Program Counter
+     PRECONDITIONS: the LMC is not halted, head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to PC, just in case
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Reads the PC contents, and brings the LM to the right MailBox
+     memPos   := decodeIndex_ForBounds_CalledBy_WhenDecoding_(lmc_pc(lmc), lmc_memBounds(lmc), "FetchInstructionOnBoard", "PC")
+     BringLM_ToCoord_HV(lmRep, displace_From_(memPos, lmc_absoluteMBSplace(lmc)))
+ // Reads the MailBox, and brings the LM to the WZ
+     ChangeLMTo_(lmLoadedRep)
+     wzContents := fetchPos_From_(memPos, lmc_memContents(lmc))
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteWZplace(lmc)))
+ // Unloads the contents on the WZ
+     Put_OnRegisterBelowWithRepAsLMC_(wzContents, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure DecodeInstructionOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC on board while LM set the Instruction Zone according to the opCode in the Working Zone
+     PRECONDITIONS: the LMC is not halted, the Working Zone is set and head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to WZ, just in case
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteWZplace(lmc)))
+ // Reads the WZ contents, and brings the LM to the IZ
+     ChangeLMTo_(lmLoadedRep)
+     Assert_OrFailWith_(isJust_(lmc_wz(lmc)), "The Working Zone is not set -- the LMC given as argument is not syncronized with that on the board when decoding instruction")
+     izContents := value(lmc_wz(lmc)) div lmc_insBase(lmc)
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteIZplace(lmc)))
+ // Unloads the contents on the IZ
+     Put_OnRegisterBelowWithRepAsLMC_(izContents, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure FetchDataOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC on board while LM set the Data Zone according to the data source of 
+              the instruction in the Instruction Zone and the Working Zone
+     PRECONDITIONS: the LMC is not halted, the Instruction Zone and Working Zone are set, and the head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to WZ
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteWZplace(lmc)))
+ // Reads the WZ contents, and if corresponds, brings the LM to the place indicated by the opCode there
+     ChangeLMTo_(lmLoadedRep)
+     Assert_OrFailWith_(isJust_(lmc_iz(lmc)), "The Instruction Zone is not set -- the LMC given as argument is not syncronized with that on the board when fetching data")
+     insCode   := value(lmc_iz(lmc))
+     Assert_OrFailWith_(isJust_(lmc_wz(lmc)), "The Working Zone is not set -- the LMC given as argument is not syncronized with that on the board when fetching data")
+     dataIndex := value(lmc_wz(lmc)) mod lmc_insBase(lmc)
+     if (usesMem_(insCode)) {
+            ChangeLMTo_(lmRep)
+            dataAddr := decodeIndex_ForBounds_CalledBy_WhenDecoding_(dataIndex, lmc_memBounds(lmc), "FetchDataOnBoard", "dataIndex of opCode")
+            data     := fetchPos_From_(dataAddr, lmc_memContents(lmc))
+            BringLM_ToCoord_HV(lmRep, displace_From_(dataAddr, lmc_absoluteMBSplace(lmc)))
+            ChangeLMTo_(lmLoadedRep)
+          } 
+     else { data := dataIndex }
+ // Brings the LM to the DZ, and unloads the data on the DZ
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(data, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure IncrementProgramCounterOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC on board while LM increments the Program Counter
+     PRECONDITIONS: the LMC is not halted, and the head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to PC, just in case
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Reads the PC contents, increments it by one, and put it back
+     Put_OnRegisterBelowWithRepAsLMC_(lmc_pc(lmc)+1, lmc)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure ExecuteInstructionOnBoardWithRepAsLMC_(lmc) {
+  /* PURPOSE: animates the LMC while the LM executes the instruction given by the Instruction Zone
+                (includes unsetting WZ, IZ and DZ as the last step)
+     PRECONDITIONS: the LMC is not halted, the Instruction Zone and Data Zone are set, 
+                    and the head is on LM representation
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Goes to the IZ to determine which instruction has to be exectued
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absoluteIZplace(lmc)))
+     switch (value(lmc_iz(lmc))) {
+        0 -> { AnimatesLMC_Halt(lmc) }
+        1 -> { AnimatesLMC_ADD(lmc)  }
+        2 -> { AnimatesLMC_SUB(lmc)  }
+        3 -> { AnimatesLMC_STA(lmc)  }
+        5 -> { AnimatesLMC_LDA(lmc)  }
+        6 -> { AnimatesLMC_BRA(lmc)  }
+        7 -> { AnimatesLMC_BRZ(lmc)  }
+        8 -> { AnimatesLMC_BRP(lmc)  }
+        9 -> { AnimatesLMC_E_S(lmc)  }
+        _ -> { BOOM("Instruction not recognized in ExecuteInstruction -- review the program loaded") }
+     }
+     if (value(lmc_iz(lmc))/=0) {
+       AnimatesResetInstructionsWithRepAsLMC_(lmc)
+     }
+}  
 //----------------------------------------------------------
-// LMC's Operations
-//----------------------------------------------------------
-function lmcWithRep_IsHalted(lmcRep) {
-  /* PURPOSE: indicates if the LMC represented in the board is halted or not
-     PRECONDICIONES: there is a valid representation of an LMC based on lmcRep in the board
 
-  */
-  return (nroBolitas(colorDe_(lm(lmcRep))) == halted_(lm(lmcRep)))
+//-------------------------------
+// LMC instruction execution inner working, animated
+//   (all functions assume as Inv.Rep. an LMC represented on the board,
+//    and the parameter synchronized with it)
+//-------------------------------
+procedure AnimatesResetInstructionsWithRepAsLMC_(lmc) {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Goes to each of the registers and reset them
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absoluteWZplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(0, lmc)
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absoluteIZplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(0, lmc)
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(0, lmc)
+ // Brings the LM to the PC, as a base point
+     BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
 }
 
-
-
-procedure IncrementProgramCounter() {
-  /* PROPÓSITO: incrementa el PC 
-     PRECONDICIONES: 
-       + el LM está delante del PC
-       + no hay nada en la WZ, la DZ o la IZ
-  */
-//  leerPC()
-//  IncrementarPC()
+procedure AnimatesLMC_Halt(lmc) {
+  /* PRECONDITION: head is on LM representation */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the PC and instructs him to halt
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+     LMC_PonerElemento_(lmc, lmc_lmRep(lmc_halt(lmc)))
 }
 
-procedure FetchInstruction() {
-  /* PROPÓSITO: lee el PC y marca el MB con ese número, mueve al LM hacia la caja marcada, 
-                lee el dato desmarcando el MB y lo lleva a la WZ 
-     PRECONDICIONES: hay una caja marcada
-  */
+procedure AnimatesLMC_ADD(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the DZ an reads it
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     let val := value(lmc_dz(lmc))
+     ChangeLMTo_(lmLoadedRep)
+  // Brings the LM to the ACC, adds, and checks for overflow
+     newLMC := lmc_add(lmc)
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(lmc_acc(newLMC), newLMC)
+     if (lmc_neg(newLMC)) {
+       BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absoluteNEGplace(lmc)))
+       Put_OnRegisterBelowWithRepAsLMC_(bool2num(lmc_neg(lmc)), newLMC)
+     }
+     ChangeLMTo_(lmRep)
 }
 
-procedure DecodeInstruction() {
-  /* PROPÓSITO: decodifica la instrucción de la WZ, vaciándola, y coloca la 
-                instrucción en la IZ. Si hay datos, marca el destino correspondiente
-     PRECONDICIONES: hay una instrucción en la WZ
-  */
+procedure AnimatesLMC_SUB(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the DZ an reads it
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     let val := value(lmc_dz(lmc))
+     ChangeLMTo_(lmLoadedRep)
+  // Brings the LM to the ACC, adds, and checks for overflow
+     newLMC := lmc_sub(lmc)
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(lmc_acc(newLMC), newLMC)
+     if (lmc_neg(newLMC)) {
+       BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absoluteNEGplace(lmc)))
+       Put_OnRegisterBelowWithRepAsLMC_(bool2num(lmc_neg(lmc)), newLMC)
+     }
+     ChangeLMTo_(lmRep)
 }
 
-procedure FetchData() {
-  /* PROPÓSITO: mueve al LM hacia el destino correspondiente (INP, ACC o MB), 
-                lee el dato desmarcando el destino y lo lleva a la DZ
-     PRECONDICIONES: hay un destino marcado (INP, ACC o MB)
-  */
+procedure AnimatesLMC_STA(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the ACC and reads it
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     memPos   := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(lmc_dz(lmc)), lmc_memBounds(lmc), "AnimatesLMC_STA", "DZ")
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+ // Reads the ACC, and brings the LM to the proper Mailbox
+     ChangeLMTo_(lmLoadedRep)
+     value := lmc_acc(lmc)
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_(memPos, lmc_absoluteMBSplace(lmc)))
+ // Unloads the contents on the Mailbox
+     LMC_PonerContenido_(lmc, value)
+     ChangeLMTo_(lmRep)
 }
 
-procedure ExecuteInstruction() {
-  /* PROPÓSITO: ejecuta la instrucción del IZ con el dato del DZ
-     PRECONDICIONES: hay una instrucción en el IZ y un dato en el DZ
-  */
+procedure AnimatesLMC_LDA(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Reads the DZ contents, and brings the LM to the right MailBox
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     memPos   := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(lmc_dz(lmc)), lmc_memBounds(lmc), "AnimatesLMC_STA", "DZ")
+     BringLM_ToCoord_HV(lmRep, displace_From_(memPos, lmc_absoluteMBSplace(lmc)))
+ // Reads the MailBox, and brings the LM to the ACC
+     ChangeLMTo_(lmLoadedRep)
+     value := fetchPos_From_(memPos, lmc_memContents(lmc))
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+ // Unloads the contents on the ACC
+     Put_OnRegisterBelowWithRepAsLMC_(value, lmc)
+     ChangeLMTo_(lmRep)
 }
 
+procedure AnimatesLMC_BRA(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Reads the DZ contents, and brings the LM to the right MailBox
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     ChangeLMTo_(lmLoadedRep)
+     newPC := value(lmc_dz(lmc))
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Unloads the contents on the PC
+     Put_OnRegisterBelowWithRepAsLMC_(newPC, lmc)
+     ChangeLMTo_(lmRep)
+}
 
+procedure AnimatesLMC_BRZ(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Reads the ACC contents, to determine if a jump have to be done
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+     if (lmc_acc(lmc) == 0) {
+ // Reads the DZ contents, and brings the LM to the right MailBox
+       BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+       ChangeLMTo_(lmLoadedRep)
+       newPC := value(lmc_dz(lmc))
+       BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Unloads the contents on the PC
+       Put_OnRegisterBelowWithRepAsLMC_(newPC, lmc)
+       ChangeLMTo_(lmRep)
+     }
+}
+
+procedure AnimatesLMC_BRP(lmc)  {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Reads the ACC contents, to determine if a jump have to be done
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteNEGplace(lmc)))
+     if (not lmc_neg(lmc)) {
+ // Reads the DZ contents, and brings the LM to the right MailBox
+       BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+       ChangeLMTo_(lmLoadedRep)
+       newPC := value(lmc_dz(lmc))
+       BringLM_ToCoord_HV(lmLoadedRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
+ // Unloads the contents on the PC
+       Put_OnRegisterBelowWithRepAsLMC_(newPC, lmc)
+       ChangeLMTo_(lmRep)
+     }
+}
+
+procedure AnimatesLMC_E_S(lmc)  {
+  /* PRECONDITIONS: the LMC is not halted, the Data Zone is set,
+                    and the head is on LM representation 
+  */
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings LM to the DZ to decide where to go next
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
+     if     (value(lmc_dz(lmc)) == 1)   { AnimatesLMC_Input (lmc) } 
+     elseif (value(lmc_dz(lmc)) == 2)   { AnimatesLMC_Output(lmc) }
+     else { BOOM("Bad address in E/S instruction -- it must be either 1 or 2 (that is, insCode 901 o 902)") }
+}
+
+procedure AnimatesLMC_Input(lmc) {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the INP slot
+     BringLM_ToCoord_HV(lmRep, displace_From_((1,0), lmc_absoluteINPplace(lmc)))
+ // Reads the input, and changes the input data
+     newLMC := lmc_input(lmc)
+     let val := lmc_acc(newLMC)
+     ChangeLMTo_(lmLoadedRep)
+     LMC_DibujarInputContents(newLMC)
+ // Brings the LM to the ACC and set it
+     BringLM_ToCoord_VH(lmLoadedRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+     Put_OnRegisterBelowWithRepAsLMC_(val, lmc)
+     ChangeLMTo_(lmRep)
+}
+
+procedure AnimatesLMC_Output(lmc) {
+ // Prepares the representations of LM
+     lmRep         := lmc_lmRep(lmc)
+     lmLoadedRep   := lmc_lmLoadedRep(lmc)
+ // Brings the LM to the ACC slot
+     BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
+ // Reads the ACC
+     newLMC := lmc_output(lmc)
+     let val := último(lmc_outContents(newLMC))
+     ChangeLMTo_(lmLoadedRep)
+ // Brings the LM to the OUT and changes the output data
+     BringLM_ToCoord_HV(lmLoadedRep, displace_From_((-1,0), lmc_absoluteOUTplace(lmc)))
+     LMC_DibujarOutputContents(newLMC)
+     ChangeLMTo_(lmRep)  
+}
+
+//-------------------------------
+// LM movement, animated
+//   (all functions assume as Inv.Rep. an LMC represented on the board, with the representation of the parameter)
+//-------------------------------
+/*@ATTRIBUTE@nonatomic@*/
+procedure BringLM_ToCoord_HV(lmRep,coord) {
+  /* PRECONDITION: the head is on the LM, he is not halted, and coord is inside the board */
+  here := coordActual()
+  let (dx, dy) := relativize_WRT_(coord, here)
+  MoveLM_InDir__Times(lmRep, Este,  dx)
+  MoveLM_InDir__Times(lmRep, Norte, dy)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure BringLM_ToCoord_VH(lmRep,coord) {
+  /* PRECONDITION: the head is on the LM, he is not halted, and coord is inside the board */
+  here := coordActual()
+  let (dx, dy) := relativize_WRT_(coord, here)
+  MoveLM_InDir__Times(lmRep, Norte, dy)
+  MoveLM_InDir__Times(lmRep, Este,  dx)
+}
+
+/*@ATTRIBUTE@nonatomic@*/
+procedure MoveLM_InDir__Times(lmRep, dir, cant) {
+  /* PRECONDITION: the head is on the LM, he is not halted, and there is enough cells in the given direction */
+  let (lmColor, lmCant) := lmRep
+  if (cant >= 0) 
+       { repeat (cant)          { MoveLM_To_(lmRep, dir)          } }
+  else { repeat (opuesto(cant)) { MoveLM_To_(lmRep, opuesto(dir)) } }
+}
+
+/*@ATTRIBUTE@atomic@*/
+procedure MoveLM_To_(lmRep, dir) {
+  /* PRECONDITION: the head is on the LM, he is not halted, and there is a cell in the given direction */
+  let (lmColor, lmCant) := lmRep
+  Sacar__Veces(lmColor, lmCant)
+  Mover(dir)
+  Poner__Veces(lmColor, lmCant)
+}
+
+/*@ATTRIBUTE@atomic@*/
+procedure ChangeLMTo_(lmRep) {
+  let (lmColor, lmCant) := lmRep
+  SacarTodas(lmColor)
+  Poner__Veces(lmColor, lmCant)
+}
+
+/*@ATTRIBUTE@atomic@*/
+procedure Put_OnRegisterBelowWithRepAsLMC_(contents, lmc) {
+  Mover(Sur)
+  LMC_PonerContenido_(lmc, contents)
+  Mover(Norte)
+}

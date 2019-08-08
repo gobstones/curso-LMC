@@ -14,7 +14,13 @@
 
 //----------------------------------------------------------
 // Reading of an LMC from the board
+//    function currentLMCBasedOn_(lmc)
+//    function currentLMCWithRep_(lmcRep)
 //----------------------------------------------------------
+function currentLMCBasedOn_(lmc) {
+  return(currentLMCWithRep_(representation(lmc)))
+}
+
 function currentLMCWithRep_(lmcRep) {
   /* PRECONDITION: there is an LMC represented on the board following the given representation
      OBSERVATIONS:
@@ -132,6 +138,8 @@ function memRowContentsWithRep_(lmcRep) {
 function inputDataWithRep_(lmcRep) {
   let (wallColor, wallCant) := lmcRep_straigthWallInDir_(lmcRep, Norte)
   let (inpColor , inpCant)  := inp(lmcRep)
+  Assert_OrFailWith_(hayUnaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(inpCant,inpColor,wallCant,wallColor,Norte,Este)
+                    ,"The LMC is malformed -- I cannot find the input slot")
   EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(inpCant ,inpColor
                                                                 ,wallCant,wallColor
                                                                 ,Norte,Este)
@@ -145,45 +153,51 @@ function inputDataWithRep_(lmcRep) {
 function outputDataWithRep_(lmcRep) {
   let (wallColor, wallCant) := lmcRep_straigthWallInDir_(lmcRep, Norte)
   let (outColor , outCant)  := out(lmcRep)
+  Assert_OrFailWith_(hayUnaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(outCant,outColor,wallCant,wallColor,Norte,Este)
+                    ,"The LMC is malformed -- I cannot find the output slot")
   EncontrarLaCeldaConExactamente_Bolitas_Y_Bolitas_EnRecorrido__(outCant ,outColor
                                                                 ,wallCant,wallColor
                                                                 ,Norte,Este)
   possibleOutDirs := direccionesHacia_Bolitas_Vecinas(outCant, outColor) 
   Assert_OrFailWith_(length(possibleOutDirs)==1, "The output has not a right shape -- there should be a slot with two adjacents cells for output")
   outDir          := primero(possibleOutDirs)
-  outContents := ioContentsWithRep_To_(lmcRep, outDir)
+  outContents     := reversed(ioContentsWithRep_To_(lmcRep, outDir))
   return (outDir, outContents, coordActual())
 
 }
 
 function ioContentsWithRep_To_(lmcRep, dirOfSecondElem) {
   contentsColor   := aux_colorOf_(contents(lmcRep))
+  wallColor       := aux_colorOf_(bounds(lmcRep))
   ioContentsSoFar := []
-  if (nroBolitas(contentsColor) > 0) { 
-    // First element is separated from the rest
+  // First element is separated from the rest
+  ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] 
+  Mover(dirOfSecondElem)
+  // The remaining elements, if they exist
+  while (puedeMover(Norte) && hayBolitas_Al_(wallColor, opuesto(dirOfSecondElem))) {
     ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] 
-    Mover(dirOfSecondElem)
-    // The remaining elements, if they exist
-    while (nroBolitas(contentsColor)>0 && puedeMover(Norte)) {
-      ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] 
-      Mover(Norte)
-    }
-    // Border case (when it reaches the North border)
-    if (not puedeMover(Norte) && nroBolitas(contentsColor)>0) 
-      { ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ]}
+    Mover(Norte)
   }
-  return (ioContentsSoFar)
+  // Border case (when it reaches the North border)
+  if (not puedeMover(Norte) && hayBolitas_Al_(wallColor, opuesto(dirOfSecondElem))) 
+    { ioContentsSoFar := ioContentsSoFar ++ [ nroBolitas(contentsColor) ] }
+  return (trim_OfTrailing_(ioContentsSoFar,0))
 }
 
 //----------------------------------------------------------
 //----------------------------------------------------------
 function lmDataWithRep_(lmcRep) {
+  /* PRECONDITION: The LMC is not in an intermediate step (with LM loaded) */
   let (lmColor , lmActiveCant) := lmcRep_activeLM(lmcRep)
+  let (lmColor , lmLoadedCant) := lmcRep_loadedLM(lmcRep)
   let (lmColor', lmHaltedCant) := lmcRep_haltedLM(lmcRep)
-  EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(lmActiveCant, lmColor, Norte, Este)
+  EncontrarPrimeraCeldaConExactamente_Bolitas_EnRecorrido__(lmActiveCant, lmColor, Norte, Este)
   if (nroBolitas(lmColor)/=lmActiveCant) {
+    Assert_OrFailWith_(not hayUnaCeldaConExactamente_Bolitas_EnRecorrido__(lmLoadedCant,lmColor,Norte,Este)
+                      ,"The LMC cannot be read -- little man is loaded")     
+    Assert_OrFailWith_(hayUnaCeldaConExactamente_Bolitas_EnRecorrido__(lmHaltedCant,lmColor,Norte,Este)
+                      ,"The LMC is not complete -- little man is not present")     
     EncontrarLaCeldaConExactamente_Bolitas_EnRecorrido__(lmHaltedCant, lmColor, Norte, Este)
-    Assert_OrFailWith_(nroBolitas(lmColor)==lmHaltedCant, "The LMC is not complete -- little man is not present")     
   }
   return (nroBolitas(lmColor)==lmActiveCant, coordActual())
 }
