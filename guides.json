@@ -1,5 +1,5 @@
 [
-  { "name": "0.Repaso", "repo": "gobstones/curso-LMC"
+  { "name": "1.Knowing the instructions", "repo": "gobstones/curso-LMC"
   , "homeLink": "https://en.wikipedia.org/wiki/Little_man_computer"
   , "exercises": 
     [ { "id": "00", "name": "One input to output"
@@ -10,6 +10,14 @@
       }
     , { "id": "02", "name": "Learning 'forever'"
       , "path": "Proyectos/02.Learning 'forever'"
+      }
+    ]
+  }
+, { "name": "Bonus: Animation", "repo": "gobstones/curso-LMC"
+  , "homeLink": "https://en.wikipedia.org/wiki/Little_man_computer"
+  , "exercises": 
+    [ { "id": "99", "name": "The Little Man in action"
+      , "path": "Proyectos/99.The Little Man in action"
       }
     ]
   }

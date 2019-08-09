@@ -1,0 +1,21 @@
+program {
+  currentLMC := miLMC()
+  MostrarLMCInicial(currentLMC)
+  while (not lmc_isHalted(currentLMC)) {
+    AnimateLMCProgramOneStepBasedOn_(currentLMC)
+    currentLMC := currentLMCBasedOn_(currentLMC)
+  }
+}
+
+function miPrograma() { return ([901, 710, 109, 309, 902, 600]) }
+
+procedure MostrarLMCInicial(lmc) { PonerLMC_(lmc)                     }
+
+function miInput()    { return ([10, 20, 30]) }
+function miLMC()      { return (loadProgram_OnLMC_(miPrograma(),
+                                loadInput_OnLMC_(miInput(), 
+                                emptyLMCWithMemSize_AndMemWidth_(14,8)
+                               ))) 
+                      }
+
+

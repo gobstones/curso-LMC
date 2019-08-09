@@ -240,6 +240,7 @@ procedure LMC_PonerElemento_(lmc, elemRep) {
 //    function currentLMCBasedOn_(lmc)
 //    function currentLMCWithRep_(lmcRep)
 //----------------------------------------------------------
+/*@ATTRIBUTE@block_name@current LMC based on _@*/
 function currentLMCBasedOn_(lmc) {
   return(currentLMCWithRep_(representation(lmc)))
 }
@@ -455,7 +456,7 @@ function elemContentsWithRep___(elemRep, contentsColor, errMsg) {
 // REQUIRES: LMCDef-F-BoardPlace
 // REQUIRES: LMCDef-Full
 
-/*@ATTRIBUTE@blockName@Execute LMC program one step, based on _@*/
+/*@ATTRIBUTE@block_name@Execute LMC program one step based on _@*/
 procedure ExecuteLMCProgramOneStepBasedOn_(lmc) {
   currentLMC := currentLMCBasedOn_(lmc)
   newLMC     := lmc_executeProgramOneStep(currentLMC)
@@ -469,7 +470,7 @@ procedure ExecuteLMCProgramOneStepBasedOn_(lmc) {
 }
 
 /*@ATTRIBUTE@nonatomic@*/
-/*@ATTRIBUTE@blockName@Animate LMC program one step, based on _@*/
+/*@ATTRIBUTE@block_name@Animate LMC program one step based on _@*/
 procedure AnimateLMCProgramOneStepBasedOn_(lmc) {
   /* PRECONDITION: the LMC on the board is not halted
      OBSERVATION: individual operations of animation assume the LMC received 
@@ -617,6 +618,7 @@ procedure ExecuteInstructionOnBoardWithRepAsLMC_(lmc) {
 //   (all functions assume as Inv.Rep. an LMC represented on the board,
 //    and the parameter synchronized with it)
 //-------------------------------
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesResetInstructionsWithRepAsLMC_(lmc) {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
@@ -632,6 +634,7 @@ procedure AnimatesResetInstructionsWithRepAsLMC_(lmc) {
      BringLM_ToCoord_VH(lmRep, displace_From_((0,1), lmc_absolutePCplace(lmc)))
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_Halt(lmc) {
   /* PRECONDITION: head is on LM representation */
  // Prepares the representations of LM
@@ -642,6 +645,7 @@ procedure AnimatesLMC_Halt(lmc) {
      LMC_PonerElemento_(lmc, lmc_lmRep(lmc_halt(lmc)))
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_ADD(lmc)  {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
@@ -661,6 +665,7 @@ procedure AnimatesLMC_ADD(lmc)  {
      ChangeLMTo_(lmRep)
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_SUB(lmc)  {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
@@ -680,11 +685,12 @@ procedure AnimatesLMC_SUB(lmc)  {
      ChangeLMTo_(lmRep)
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_STA(lmc)  {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
      lmLoadedRep   := lmc_lmLoadedRep(lmc)
- // Reads the DZ contents, and brings the LM to the ACC, for reading
+ // Brings the LM to the ACC and reads it
      BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteDZplace(lmc)))
      memPos   := decodeIndex_ForBounds_CalledBy_WhenDecoding_(value(lmc_dz(lmc)), lmc_memBounds(lmc), "AnimatesLMC_STA", "DZ")
      BringLM_ToCoord_HV(lmRep, displace_From_((0,1), lmc_absoluteACCplace(lmc)))
@@ -697,6 +703,7 @@ procedure AnimatesLMC_STA(lmc)  {
      ChangeLMTo_(lmRep)
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_LDA(lmc)  {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
@@ -714,6 +721,7 @@ procedure AnimatesLMC_LDA(lmc)  {
      ChangeLMTo_(lmRep)
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_BRA(lmc)  {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
@@ -728,6 +736,7 @@ procedure AnimatesLMC_BRA(lmc)  {
      ChangeLMTo_(lmRep)
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_BRZ(lmc)  {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
@@ -746,6 +755,7 @@ procedure AnimatesLMC_BRZ(lmc)  {
      }
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_BRP(lmc)  {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
@@ -764,6 +774,7 @@ procedure AnimatesLMC_BRP(lmc)  {
      }
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_E_S(lmc)  {
   /* PRECONDITIONS: the LMC is not halted, the Data Zone is set,
                     and the head is on LM representation 
@@ -778,6 +789,7 @@ procedure AnimatesLMC_E_S(lmc)  {
      else { BOOM("Bad address in E/S instruction -- it must be either 1 or 2 (that is, insCode 901 o 902)") }
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_Input(lmc) {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
@@ -795,6 +807,7 @@ procedure AnimatesLMC_Input(lmc) {
      ChangeLMTo_(lmRep)
 }
 
+/*@ATTRIBUTE@nonatomic@*/
 procedure AnimatesLMC_Output(lmc) {
  // Prepares the representations of LM
      lmRep         := lmc_lmRep(lmc)
@@ -997,6 +1010,7 @@ function lmc_executeProgram_Steps(lmc, cant) { return (LMC (lmc | model <- lmcMo
 function lmc_executeProgramOneStep(lmc)      { return (LMC (lmc | model <- lmcModel_executeProgramOneStep(model(lmc))))        }
 function lmc_inspectDebugAtStep_(lmc, step)  { return (LMC (lmc | model <- lmcModel_inspectDebugAtStep_  (model(lmc), step)))  }
 
+/*@ATTRIBUTE@block_name@LMC _ is halted@*/
 function lmc_isHalted(lmc) { return(lmcModel_isHalted(model(lmc))) }
 
 function lmc_setOriginTo_(lmc, coord) { return(LMC(lmc | placing <- lmcPlace_setOriginTo_(placing(lmc), coord))) }

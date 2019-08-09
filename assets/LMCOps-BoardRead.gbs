@@ -17,6 +17,7 @@
 //    function currentLMCBasedOn_(lmc)
 //    function currentLMCWithRep_(lmcRep)
 //----------------------------------------------------------
+/*@ATTRIBUTE@block_name@current LMC based on _@*/
 function currentLMCBasedOn_(lmc) {
   return(currentLMCWithRep_(representation(lmc)))
 }
