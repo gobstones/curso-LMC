@@ -114,6 +114,7 @@ function lmc_executeProgram_Steps(lmc, cant) { return (LMC (lmc | model <- lmcMo
 function lmc_executeProgramOneStep(lmc)      { return (LMC (lmc | model <- lmcModel_executeProgramOneStep(model(lmc))))        }
 function lmc_inspectDebugAtStep_(lmc, step)  { return (LMC (lmc | model <- lmcModel_inspectDebugAtStep_  (model(lmc), step)))  }
 
+/*@ATTRIBUTE@block_name@LMC _ is halted@*/
 function lmc_isHalted(lmc) { return(lmcModel_isHalted(model(lmc))) }
 
 function lmc_setOriginTo_(lmc, coord) { return(LMC(lmc | placing <- lmcPlace_setOriginTo_(placing(lmc), coord))) }
